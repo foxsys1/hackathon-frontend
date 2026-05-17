@@ -100,3 +100,7 @@ lib/
 | -------------------------------- | ---------------------------------- |
 | `assets/icons/house_bg.svg`      | Hero background house illustration |
 | `assets/icons/koscheck_logo.svg` | KosCheck wordmark logo             |
+
+---
+
+made by yazid
