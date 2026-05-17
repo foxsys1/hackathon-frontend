@@ -363,9 +363,6 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
       );
 }
 
-// ─────────────────────────────────────────────────────────
-// Reusable widgets
-// ─────────────────────────────────────────────────────────
 
 class _QuestionCard extends StatelessWidget {
   const _QuestionCard({

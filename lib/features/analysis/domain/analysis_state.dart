@@ -4,9 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'analysis_state.freezed.dart';
 part 'analysis_state.g.dart';
 
-// ──────────────────────────────────────────────
-// Basic Info (Step 1)
-// ──────────────────────────────────────────────
 
 @freezed
 class BasicInfo with _$BasicInfo {
@@ -21,9 +18,6 @@ class BasicInfo with _$BasicInfo {
   }) = _BasicInfo;
 }
 
-// ──────────────────────────────────────────────
-// Quick Check (Step 2)
-// ──────────────────────────────────────────────
 
 /// Tri-state answer: yes / no / tidakTahu (don't know)
 enum TriAnswer { ya, tidak, tidakTahu }
@@ -61,9 +55,6 @@ class QuickCheck with _$QuickCheck {
   }) = _QuickCheck;
 }
 
-// ──────────────────────────────────────────────
-// Deep Check (Step 2b — optional)
-// ──────────────────────────────────────────────
 
 @freezed
 class DeepCheck with _$DeepCheck {
@@ -73,9 +64,6 @@ class DeepCheck with _$DeepCheck {
   }) = _DeepCheck;
 }
 
-// ──────────────────────────────────────────────
-// Analysis Result (populated after analysis)
-// ──────────────────────────────────────────────
 
 @freezed
 class RedFlag with _$RedFlag {
@@ -120,9 +108,6 @@ class AnalysisResult with _$AnalysisResult {
   }) = _AnalysisResult;
 }
 
-// ──────────────────────────────────────────────
-// Root Analysis State
-// ──────────────────────────────────────────────
 
 @freezed
 class AnalysisState with _$AnalysisState {
@@ -134,9 +119,6 @@ class AnalysisState with _$AnalysisState {
   }) = _AnalysisState;
 }
 
-// ──────────────────────────────────────────────
-// Notifier
-// ──────────────────────────────────────────────
 
 @Riverpod(keepAlive: true)
 class AnalysisStateNotifier extends _$AnalysisStateNotifier {

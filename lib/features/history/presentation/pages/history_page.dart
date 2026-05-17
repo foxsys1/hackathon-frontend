@@ -215,9 +215,6 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Activity Summary Card
-// ─────────────────────────────────────────────────────────
 
 class _ActivitySummaryCard extends StatelessWidget {
   const _ActivitySummaryCard({
@@ -351,9 +348,6 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Sort Dropdown
-// ─────────────────────────────────────────────────────────
 
 class _SortDropdown extends StatelessWidget {
   const _SortDropdown({required this.value, required this.onChanged});
@@ -398,9 +392,6 @@ class _SortDropdown extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// History Record Card
-// ─────────────────────────────────────────────────────────
 
 class _HistoryRecordCard extends StatelessWidget {
   const _HistoryRecordCard({

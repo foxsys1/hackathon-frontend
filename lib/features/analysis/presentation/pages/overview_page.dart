@@ -235,9 +235,6 @@ class OverviewPage extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Reusable widgets
-// ─────────────────────────────────────────────────────────
 
 class _OverviewCard extends StatelessWidget {
   const _OverviewCard({

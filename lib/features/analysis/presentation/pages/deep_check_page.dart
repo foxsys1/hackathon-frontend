@@ -272,9 +272,6 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Reusable widgets
-// ─────────────────────────────────────────────────────────
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({

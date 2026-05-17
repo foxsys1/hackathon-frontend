@@ -133,9 +133,6 @@ class AnalysisResultPage extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Risk Score Card
-// ─────────────────────────────────────────────────────────
 
 class _RiskScoreCard extends StatelessWidget {
   const _RiskScoreCard({required this.result});
@@ -274,9 +271,6 @@ class _RiskScoreCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Confidence Score
-// ─────────────────────────────────────────────────────────
 
 class _ConfidenceCard extends StatelessWidget {
   const _ConfidenceCard({required this.result});
@@ -367,9 +361,6 @@ class _ConfidenceCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Red Flag Card
-// ─────────────────────────────────────────────────────────
 
 class _RedFlagCard extends StatelessWidget {
   const _RedFlagCard({required this.redFlags});
@@ -487,9 +478,6 @@ class _RedFlagCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Recommendations
-// ─────────────────────────────────────────────────────────
 
 class _RecommendationsCard extends StatelessWidget {
   const _RecommendationsCard({required this.recommendations});
@@ -562,9 +550,6 @@ class _RecommendationsCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Area Comparison
-// ─────────────────────────────────────────────────────────
 
 class _AreaComparisonCard extends StatelessWidget {
   const _AreaComparisonCard({required this.comparison});
@@ -698,9 +683,6 @@ class _ComparisonRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Disclaimer
-// ─────────────────────────────────────────────────────────
 
 class _DisclaimerCard extends StatelessWidget {
   @override
@@ -748,9 +730,6 @@ class _DisclaimerCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Action Card
-// ─────────────────────────────────────────────────────────
 
 class _ActionCard extends StatelessWidget {
   const _ActionCard({

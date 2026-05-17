@@ -489,9 +489,6 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Step status
-// ─────────────────────────────────────────────────────────
 
 enum _StepStatus { waiting, processing, done }
 
@@ -565,9 +562,6 @@ class _AnalysisStepRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Cancel bottom sheet
-// ─────────────────────────────────────────────────────────
 
 class _CancelSheet extends StatelessWidget {
   const _CancelSheet({required this.onCancel, required this.onContinue});

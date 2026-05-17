@@ -218,9 +218,6 @@ class ChatTemplatePage extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Red Flag Summary
-// ─────────────────────────────────────────────────────────
 
 class _RedFlagSummaryCard extends StatelessWidget {
   const _RedFlagSummaryCard({required this.redFlags});
@@ -339,9 +336,6 @@ class _RedFlagSummaryCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Chat Template Card
-// ─────────────────────────────────────────────────────────
 
 class _ChatTemplateCard extends StatelessWidget {
   const _ChatTemplateCard({required this.template});

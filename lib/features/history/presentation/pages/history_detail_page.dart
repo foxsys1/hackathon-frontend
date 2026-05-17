@@ -171,9 +171,6 @@ class HistoryDetailPage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Kos Info Header
-// ─────────────────────────────────────────────────────────
 
 class _KosInfoHeader extends StatelessWidget {
   const _KosInfoHeader({required this.record, required this.isNarrow});
@@ -313,9 +310,6 @@ class _KosInfoHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Risk Score Card
-// ─────────────────────────────────────────────────────────
 
 class _RiskScoreCard extends StatelessWidget {
   const _RiskScoreCard({required this.record, required this.isNarrow});
@@ -487,9 +481,6 @@ class _RiskScoreCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Confidence Card
-// ─────────────────────────────────────────────────────────
 
 class _ConfidenceCard extends StatelessWidget {
   const _ConfidenceCard({required this.record});
@@ -580,9 +571,6 @@ class _ConfidenceCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Red Flag Card
-// ─────────────────────────────────────────────────────────
 
 class _RedFlagCard extends StatelessWidget {
   const _RedFlagCard({required this.redFlags});
@@ -702,9 +690,6 @@ class _RedFlagCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Recommendations Card
-// ─────────────────────────────────────────────────────────
 
 class _RecommendationsCard extends StatelessWidget {
   const _RecommendationsCard({required this.recommendations});
@@ -781,9 +766,6 @@ class _RecommendationsCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Area Comparison Card
-// ─────────────────────────────────────────────────────────
 
 class _AreaComparisonCard extends StatelessWidget {
   const _AreaComparisonCard({required this.comparison});
@@ -920,9 +902,6 @@ class _CompRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Disclaimer Card
-// ─────────────────────────────────────────────────────────
 
 class _DisclaimerCard extends StatelessWidget {
   @override
@@ -970,9 +949,6 @@ class _DisclaimerCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// Action Card
-// ─────────────────────────────────────────────────────────
 
 class _ActionCard extends StatelessWidget {
   const _ActionCard({
