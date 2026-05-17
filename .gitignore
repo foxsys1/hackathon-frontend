@@ -19,10 +19,6 @@ migrate_working_dir/
 # VS Code related
 .vscode/
 
-# AI / editor tool configs
-.windsurf/
-.cursor/
-.aider*
 
 # Flutter SDK (do not commit the SDK itself)
 /flutter/
