@@ -207,6 +207,7 @@ class _InfoCardGrid extends StatelessWidget {
         final isNarrow = constraints.maxWidth < 320;
         return GridView.builder(
           shrinkWrap: true,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,

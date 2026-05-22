@@ -100,14 +100,12 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
             redFlags: [
               RedFlag(
                 title: 'Tekanan Bayar cepat',
-                description:
-                    'Pemilik mendesak DP sebelum survei/lihat kos',
+                description: 'Pemilik mendesak DP sebelum survei/lihat kos',
                 icon: 'speed',
               ),
               RedFlag(
                 title: 'Rekening Berbeda',
-                description:
-                    'Nama rekening tidak sesuai dengan nama pemilik',
+                description: 'Nama rekening tidak sesuai dengan nama pemilik',
                 icon: 'account_balance',
               ),
               RedFlag(
@@ -118,8 +116,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
               ),
               RedFlag(
                 title: 'Tidak Boleh Survei',
-                description:
-                    'Pemilik menolak permintaan untuk survei langsung',
+                description: 'Pemilik menolak permintaan untuk survei langsung',
                 icon: 'block',
               ),
             ],
@@ -163,6 +160,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _CancelSheet(
         onCancel: () {
@@ -240,7 +239,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
                             child: CircularProgressIndicator(
                               value: _progressAnim.value,
                               strokeWidth: 10,
-                              backgroundColor: AppColors.border.withOpacity(0.3),
+                              backgroundColor:
+                                  AppColors.border.withOpacity(0.3),
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 AppColors.primary,
                               ),
@@ -489,7 +489,6 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
   }
 }
 
-
 enum _StepStatus { waiting, processing, done }
 
 class _AnalysisStepRow extends StatelessWidget {
@@ -561,7 +560,6 @@ class _AnalysisStepRow extends StatelessWidget {
     );
   }
 }
-
 
 class _CancelSheet extends StatelessWidget {
   const _CancelSheet({required this.onCancel, required this.onContinue});
