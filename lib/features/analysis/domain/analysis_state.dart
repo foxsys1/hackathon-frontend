@@ -116,6 +116,8 @@ class AnalysisState with _$AnalysisState {
     @Default(QuickCheck()) QuickCheck quickCheck,
     @Default(DeepCheck()) DeepCheck deepCheck,
     @Default(null) AnalysisResult? result,
+    @Default(false) bool isLoading,
+    @Default(null) String? errorMessage,
   }) = _AnalysisState;
 }
 
@@ -169,7 +171,17 @@ class AnalysisStateNotifier extends _$AnalysisStateNotifier {
 
   // ── Result ──
   void setResult(AnalysisResult result) =>
-      state = state.copyWith(result: result);
+      state = state.copyWith(result: result, isLoading: false, errorMessage: null);
 
   void reset() => state = const AnalysisState();
+
+  // ── Async state helpers ──
+  void setLoading(bool loading) =>
+      state = state.copyWith(isLoading: loading, errorMessage: null);
+
+  void setError(String error) =>
+      state = state.copyWith(isLoading: false, errorMessage: error);
+
+  void clearError() =>
+      state = state.copyWith(errorMessage: null);
 }

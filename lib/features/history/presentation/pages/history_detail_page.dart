@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
-import 'package:kos_gdgoc/features/history/data/mock_history_data.dart';
+import 'package:kos_gdgoc/features/history/data/history_provider.dart';
 import 'package:kos_gdgoc/features/history/domain/history_record.dart';
 
-class HistoryDetailPage extends StatelessWidget {
+class HistoryDetailPage extends ConsumerWidget {
   const HistoryDetailPage({super.key, required this.id});
 
   final String id;
 
   @override
-  Widget build(BuildContext context) {
-    final record = mockHistoryRecords.cast<HistoryRecord?>().firstWhere(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final liveRecords = ref.watch(historyNotifierProvider);
+    final record = liveRecords.cast<HistoryRecord?>().firstWhere(
           (r) => r!.id == id,
           orElse: () => null,
         );
@@ -171,7 +173,6 @@ class HistoryDetailPage extends StatelessWidget {
   }
 }
 
-
 class _KosInfoHeader extends StatelessWidget {
   const _KosInfoHeader({required this.record, required this.isNarrow});
   final HistoryRecord record;
@@ -310,7 +311,6 @@ class _KosInfoHeader extends StatelessWidget {
   }
 }
 
-
 class _RiskScoreCard extends StatelessWidget {
   const _RiskScoreCard({required this.record, required this.isNarrow});
   final HistoryRecord record;
@@ -390,8 +390,7 @@ class _RiskScoreCard extends StatelessWidget {
                     value: record.riskScore / 100,
                     strokeWidth: 8,
                     backgroundColor: Colors.white.withOpacity(0.5),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(_scoreColor()),
+                    valueColor: AlwaysStoppedAnimation<Color>(_scoreColor()),
                     strokeCap: StrokeCap.round,
                   ),
                 ),
@@ -480,7 +479,6 @@ class _RiskScoreCard extends StatelessWidget {
     );
   }
 }
-
 
 class _ConfidenceCard extends StatelessWidget {
   const _ConfidenceCard({required this.record});
@@ -571,7 +569,6 @@ class _ConfidenceCard extends StatelessWidget {
   }
 }
 
-
 class _RedFlagCard extends StatelessWidget {
   const _RedFlagCard({required this.redFlags});
   final List<RedFlag> redFlags;
@@ -605,8 +602,7 @@ class _RedFlagCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.flag_outlined,
-                  size: 20, color: AppColors.chipRedText),
+              Icon(Icons.flag_outlined, size: 20, color: AppColors.chipRedText),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -690,7 +686,6 @@ class _RedFlagCard extends StatelessWidget {
   }
 }
 
-
 class _RecommendationsCard extends StatelessWidget {
   const _RecommendationsCard({required this.recommendations});
   final List<String> recommendations;
@@ -739,9 +734,7 @@ class _RecommendationsCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    i < _icons.length
-                        ? _icons[i]
-                        : Icons.check_circle_outline,
+                    i < _icons.length ? _icons[i] : Icons.check_circle_outline,
                     size: 18,
                     color: AppColors.primary,
                   ),
@@ -765,7 +758,6 @@ class _RecommendationsCard extends StatelessWidget {
     );
   }
 }
-
 
 class _AreaComparisonCard extends StatelessWidget {
   const _AreaComparisonCard({required this.comparison});
@@ -835,8 +827,7 @@ class _AreaComparisonCard extends StatelessWidget {
           const SizedBox(height: 14),
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.chipYellow.withOpacity(0.5),
               borderRadius: BorderRadius.circular(10),
@@ -902,7 +893,6 @@ class _CompRow extends StatelessWidget {
   }
 }
 
-
 class _DisclaimerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -948,7 +938,6 @@ class _DisclaimerCard extends StatelessWidget {
     );
   }
 }
-
 
 class _ActionCard extends StatelessWidget {
   const _ActionCard({

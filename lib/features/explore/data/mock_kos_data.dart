@@ -1,0 +1,167 @@
+import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
+
+// ── Available filter options ──
+
+const List<String> availableLocations = [
+  'Pogung',
+  'Palagan',
+  'Condong Catur',
+  'Gejayan',
+  'Karangwuni',
+  'Seturan',
+  'Demangan',
+  'Jakal',
+  'Babarsari',
+  'Pandega',
+];
+
+const List<String> fasilitasKamar = [
+  'K. Mandi Dalam',
+  'Meja',
+  'Kloset Duduk',
+  'AC',
+  'Lemari',
+  'Kasur',
+  'TV',
+  'Kipas Angin',
+  'Cermin',
+];
+
+const List<String> fasilitasBersama = [
+  'Parkir Motor',
+  'Parkir Mobil',
+  'Dapur',
+  'Ruang Tamu',
+  'Laundry',
+  'CCTV',
+  'Area Merokok',
+  'Kulkas',
+  'Wifi',
+  'Dispenser Air Minum',
+];
+
+// ── Mock kos listings ──
+
+final List<KosListing> mockKosListings = [
+  const KosListing(
+    id: 'kos-001',
+    name: 'Kos Putra Senja Ayu',
+    location: 'Pogung Baru, Sleman',
+    area: 'Pogung',
+    pricePerMonth: 1000000,
+    imageUrl: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=300&fit=crop',
+    rating: 4.6,
+    reviewCount: 2,
+    distanceKm: 0.8,
+    aiSummary:
+        'Lokasi strategis dekat kampus UGM. Pemilik responsif dan kamar bersih, tetapi parkiran terbatas',
+    facilities: ['K. Mandi Dalam', 'AC', 'Wifi', 'Kasur', 'Lemari', 'Meja'],
+    facilityTags: ['Lokasi', 'Wifi', 'Keamanan'],
+  ),
+  const KosListing(
+    id: 'kos-002',
+    name: 'Kos Putra Sentanu',
+    location: 'Pogung Kidul, Sleman',
+    area: 'Pogung',
+    pricePerMonth: 1250000,
+    imageUrl: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop',
+    rating: 4.0,
+    reviewCount: 15,
+    distanceKm: 1.2,
+    aiSummary:
+        'Lokasi strategis dekat kampus UGM. Pemilik responsif dan kamar bersih, tetapi parkiran terbatas',
+    facilities: ['K. Mandi Dalam', 'AC', 'Wifi', 'Kasur', 'Lemari', 'TV'],
+    facilityTags: ['Lokasi', 'Wifi', 'Keamanan'],
+  ),
+  const KosListing(
+    id: 'kos-003',
+    name: 'Kos Putra Janardana',
+    location: 'Pogung Baru, Sleman',
+    area: 'Pogung',
+    pricePerMonth: 2100000,
+    imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop',
+    rating: 4.3,
+    reviewCount: 28,
+    distanceKm: 1.5,
+    aiSummary:
+        'Lokasi strategis dekat kampus UGM. Pemilik responsif dan kamar bersih, tetapi parkiran terbatas',
+    facilities: [
+      'K. Mandi Dalam',
+      'AC',
+      'Wifi',
+      'Kasur',
+      'Lemari',
+      'TV',
+      'Parkir Motor',
+      'CCTV',
+    ],
+    facilityTags: ['Lokasi', 'Kenyamanan', 'Wifi'],
+  ),
+  const KosListing(
+    id: 'kos-004',
+    name: 'Kos Putri Melati Indah',
+    location: 'Condong Catur, Sleman',
+    area: 'Condong Catur',
+    pricePerMonth: 900000,
+    imageUrl: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
+    rating: 4.8,
+    reviewCount: 42,
+    distanceKm: 2.3,
+    aiSummary:
+        'Kos bersih dengan fasilitas lengkap. Area parkir luas dan keamanan 24 jam dengan CCTV.',
+    facilities: [
+      'K. Mandi Dalam',
+      'AC',
+      'Wifi',
+      'Kasur',
+      'Lemari',
+      'Meja',
+      'Parkir Motor',
+      'Parkir Mobil',
+      'CCTV',
+      'Laundry',
+    ],
+    facilityTags: ['Keamanan', 'Kenyamanan', 'Wifi', 'Lokasi'],
+  ),
+  const KosListing(
+    id: 'kos-005',
+    name: 'Kos Putra Gejayan Residence',
+    location: 'Gejayan, Sleman',
+    area: 'Gejayan',
+    pricePerMonth: 1500000,
+    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&h=300&fit=crop',
+    rating: 3.9,
+    reviewCount: 8,
+    distanceKm: 0.5,
+    aiSummary:
+        'Dekat pusat kuliner dan transportasi. Kamar cukup luas namun ventilasi perlu perbaikan.',
+    facilities: ['K. Mandi Dalam', 'Wifi', 'Kasur', 'Lemari', 'Kipas Angin'],
+    facilityTags: ['Lokasi', 'Wifi'],
+  ),
+  const KosListing(
+    id: 'kos-006',
+    name: 'Kos Putri Seturan Garden',
+    location: 'Seturan, Sleman',
+    area: 'Seturan',
+    pricePerMonth: 1800000,
+    imageUrl: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=300&fit=crop',
+    rating: 4.5,
+    reviewCount: 19,
+    distanceKm: 3.1,
+    aiSummary:
+        'Lingkungan tenang dan asri. Fasilitas premium termasuk dapur bersama dan ruang tamu.',
+    facilities: [
+      'K. Mandi Dalam',
+      'AC',
+      'Wifi',
+      'Kasur',
+      'Lemari',
+      'Meja',
+      'TV',
+      'Dapur',
+      'Ruang Tamu',
+      'Kulkas',
+    ],
+    facilityTags: ['Kenyamanan', 'Wifi', 'Lokasi', 'Keamanan'],
+  ),
+];

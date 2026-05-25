@@ -7,6 +7,9 @@ import 'package:kos_gdgoc/features/analysis/presentation/pages/basic_info_page.d
 import 'package:kos_gdgoc/features/analysis/presentation/pages/deep_check_page.dart';
 import 'package:kos_gdgoc/features/analysis/presentation/pages/overview_page.dart';
 import 'package:kos_gdgoc/features/analysis/presentation/pages/quick_check_page.dart';
+import 'package:kos_gdgoc/features/explore/presentation/pages/explore_page.dart';
+import 'package:kos_gdgoc/features/explore/presentation/pages/explore_detail_page.dart';
+import 'package:kos_gdgoc/features/explore/presentation/pages/explore_all_reviews_page.dart';
 import 'package:kos_gdgoc/features/history/presentation/pages/history_detail_page.dart';
 import 'package:kos_gdgoc/features/history/presentation/pages/history_page.dart';
 import 'package:kos_gdgoc/features/home/presentation/pages/home_page.dart';
@@ -37,16 +40,30 @@ GoRouter appRouter(AppRouterRef ref) {
             builder: (context, state) => const HomePage(),
           ),
           GoRoute(
+            path: '/explore',
+            parentNavigatorKey: _shellNavigatorKey,
+            builder: (context, state) => const ExplorePage(),
+          ),
+          GoRoute(
             path: '/history',
             parentNavigatorKey: _shellNavigatorKey,
             builder: (context, state) => const HistoryPage(),
           ),
-          GoRoute(
-            path: '/education',
-            parentNavigatorKey: _shellNavigatorKey,
-            builder: (context, state) => const LandingPage(),
-          ),
         ],
+      ),
+      GoRoute(
+        path: '/explore/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ExploreDetailPage(
+          kosId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/explore/:id/reviews',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ExploreAllReviewsPage(
+          kosId: state.pathParameters['id']!,
+        ),
       ),
       GoRoute(
         path: '/history/:id',
@@ -99,8 +116,8 @@ class _ScaffoldWithNavBar extends StatelessWidget {
   final Widget child;
 
   static int _indexOf(String location) {
-    if (location.startsWith('/history')) return 1;
-    if (location.startsWith('/education')) return 2;
+    if (location.startsWith('/explore')) return 1;
+    if (location.startsWith('/history')) return 2;
     return 0;
   }
 
@@ -121,9 +138,9 @@ class _ScaffoldWithNavBar extends StatelessWidget {
             case 0:
               context.go('/');
             case 1:
-              context.go('/history');
+              context.go('/explore');
             case 2:
-              context.go('/education');
+              context.go('/history');
           }
         },
         destinations: const [
@@ -133,14 +150,14 @@ class _ScaffoldWithNavBar extends StatelessWidget {
             label: 'Beranda',
           ),
           NavigationDestination(
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore, color: AppColors.primary),
+            label: 'Eksplor',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history, color: AppColors.primary),
             label: 'Riwayat',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book, color: AppColors.primary),
-            label: 'Edukasi',
           ),
         ],
       ),
