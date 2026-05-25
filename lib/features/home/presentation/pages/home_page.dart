@@ -109,11 +109,7 @@ class _HeroSection extends StatelessWidget {
                         'assets/icons/koscheck_logo.svg',
                         height: 24,
                       ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.notifications_outlined,
-                            color: Colors.white),
-                      ),
+                      const SizedBox(width: 48),
                     ],
                   ),
                   const SizedBox(height: 100),
@@ -175,28 +171,28 @@ class _InfoCardGrid extends StatelessWidget {
       iconBgColor: Color(0xFFFEE2E2),
       iconColor: Color(0xFFEF4444),
       title: 'Cek Kelengkapan',
-      subtitle: 'Alamat, foto, atau identitas\npemilik belum lengkap.',
+      subtitle: 'Alamat, foto, atau identitas pemilik belum lengkap.',
     ),
     _CardData(
       icon: Icons.shield_outlined,
       iconBgColor: Color(0xFFD1FAE5),
       iconColor: Color(0xFF10B981),
       title: 'DP Lebih Aman',
-      subtitle: 'Pastikan semuanya jelas\nsebelum transfer.',
+      subtitle: 'Pastikan semuanya jelas sebelum transfer.',
     ),
     _CardData(
-      icon: Icons.shield_outlined,
-      iconBgColor: Color(0xFFD1FAE5),
-      iconColor: Color(0xFF10B981),
-      title: 'DP Lebih Aman',
-      subtitle: 'Pastikan semuanya jelas\nsebelum transfer.',
+      icon: Icons.trending_up_rounded,
+      iconBgColor: Color(0xFFEDE9FE),
+      iconColor: Color(0xFF7C3AED),
+      title: 'Harga Wajar',
+      subtitle: 'Bandingkan harga listing dengan rata-rata area.',
     ),
     _CardData(
-      icon: Icons.shield_outlined,
-      iconBgColor: Color(0xFFD1FAE5),
-      iconColor: Color(0xFF10B981),
-      title: 'DP Lebih Aman',
-      subtitle: 'Pastikan semuanya jelas\nsebelum transfer.',
+      icon: Icons.chat_outlined,
+      iconBgColor: Color(0xFFFEF3C7),
+      iconColor: Color(0xFFD97706),
+      title: 'Analisis Chat',
+      subtitle: 'Deteksi pola komunikasi mencurigakan dari pemilik.',
     ),
   ];
 
@@ -204,7 +200,8 @@ class _InfoCardGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth < 320;
+        final cardWidth = (constraints.maxWidth - 12) / 2;
+        final mainAxisExtent = (cardWidth * 1.15).clamp(150.0, 220.0);
         return GridView.builder(
           shrinkWrap: true,
           padding: EdgeInsets.zero,
@@ -213,7 +210,7 @@ class _InfoCardGrid extends StatelessWidget {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: isNarrow ? 0.80 : 0.95,
+            mainAxisExtent: mainAxisExtent,
           ),
           itemCount: _cards.length,
           itemBuilder: (context, i) => _InfoCard(data: _cards[i]),
@@ -262,7 +259,7 @@ class _InfoCard extends StatelessWidget {
             ),
             child: Icon(data.icon, color: data.iconColor, size: 24),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Text(
             data.title,
             style: const TextStyle(
@@ -270,14 +267,20 @@ class _InfoCard extends StatelessWidget {
               fontSize: 14,
               color: AppColors.textPrimary,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
-          Text(
-            data.subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.4,
+          Flexible(
+            child: Text(
+              data.subtitle,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

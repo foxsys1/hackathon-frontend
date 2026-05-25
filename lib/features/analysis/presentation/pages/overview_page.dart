@@ -8,6 +8,36 @@ import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_b
 class OverviewPage extends ConsumerWidget {
   const OverviewPage({super.key});
 
+  void _startAnalysis(BuildContext context, WidgetRef ref, BasicInfo basic) {
+    final missingFields = <String>[];
+    if (basic.namaKos.trim().isEmpty) missingFields.add('Nama Kos');
+    if (basic.lokasi.trim().isEmpty) missingFields.add('Lokasi');
+    if (basic.hargaPerBulan.trim().isEmpty ||
+        !RegExp(r'\d').hasMatch(basic.hargaPerBulan)) {
+      missingFields.add('Harga per Bulan');
+    }
+
+    if (missingFields.isNotEmpty) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useRootNavigator: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _ValidationSheet(
+          missingFields: missingFields,
+          onFix: () {
+            Navigator.pop(context);
+            context.push('/analyze');
+          },
+        ),
+      );
+      return;
+    }
+
+    context.push('/analyze/loading');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(analysisStateNotifierProvider);
@@ -59,7 +89,7 @@ class OverviewPage extends ConsumerWidget {
                   _OverviewCard(
                     icon: Icons.verified_outlined,
                     title: 'Informasi Dasar',
-                    onEdit: () => context.go('/analyze'),
+                    onEdit: () => context.push('/analyze'),
                     child: Column(
                       children: [
                         _InfoRow('Nama', basic.namaKos),
@@ -187,7 +217,7 @@ class OverviewPage extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: ElevatedButton(
-                onPressed: () => context.push('/analyze/loading'),
+                onPressed: () => _startAnalysis(context, ref, basic),
                 child: const Text('Analisis Risiko'),
               ),
             ),
@@ -234,7 +264,6 @@ class OverviewPage extends ConsumerWidget {
     }
   }
 }
-
 
 class _OverviewCard extends StatelessWidget {
   const _OverviewCard({
@@ -386,6 +415,100 @@ class _VerifRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ValidationSheet extends StatelessWidget {
+  const _ValidationSheet({
+    required this.missingFields,
+    required this.onFix,
+  });
+
+  final List<String> missingFields;
+  final VoidCallback onFix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.chipRed,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline,
+                  color: AppColors.chipRedText, size: 28),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Data Belum Lengkap',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Lengkapi informasi berikut sebelum memulai analisis:',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...missingFields.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.circle,
+                        size: 6, color: AppColors.chipRedText),
+                    const SizedBox(width: 8),
+                    Text(
+                      f,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.chipRedText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: onFix,
+              child: const Text('Lengkapi Informasi Dasar'),
+            ),
+          ],
+        ),
       ),
     );
   }

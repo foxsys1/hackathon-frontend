@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
+import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
 import 'package:kos_gdgoc/features/explore/domain/explore_filter_state.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/explore_filter_sheet.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/kos_card.dart';
@@ -62,6 +63,47 @@ class ExplorePage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
+
+            // ── API loading / error indicator ──
+            Builder(builder: (context) {
+              final apiAsync = ref.watch(apiKosListingsProvider);
+              return apiAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+                error: (_, __) => Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.wifi_off,
+                            size: 16, color: Color(0xFF92400E)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Tidak bisa terhubung ke server. Menampilkan data lokal.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                data: (_) => const SizedBox.shrink(),
+              );
+            }),
+            const SizedBox(height: 12),
 
             // ── Search bar ──
             Padding(

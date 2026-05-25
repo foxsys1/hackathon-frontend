@@ -40,5 +40,8 @@ class KosListing with _$KosListing {
 
     /// Display-only category chips shown on the card, e.g. ["Lokasi", "Wifi", "Keamanan"]
     required List<String> facilityTags,
+
+    /// Source URL from the discover API (empty for mock data)
+    @Default('') String listingUrl,
   }) = _KosListing;
 }

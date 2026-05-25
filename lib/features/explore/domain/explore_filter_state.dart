@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
 import 'package:kos_gdgoc/features/explore/data/mock_kos_data.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 
@@ -86,7 +87,11 @@ class ExploreFilterNotifier extends _$ExploreFilterNotifier {
 @riverpod
 List<KosListing> filteredKosListings(FilteredKosListingsRef ref) {
   final filter = ref.watch(exploreFilterNotifierProvider);
-  var listings = List<KosListing>.from(mockKosListings);
+  // Use live API data; fall back to mock when still loading or API is empty.
+  final apiAsync = ref.watch(apiKosListingsProvider);
+  var listings = List<KosListing>.from(
+    apiAsync.valueOrNull ?? mockKosListings,
+  );
 
   // Search filter
   if (filter.searchQuery.isNotEmpty) {

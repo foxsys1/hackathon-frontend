@@ -1,10 +1,16 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kos_gdgoc/core/network/api_service.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
+import 'package:kos_gdgoc/features/analysis/data/analysis_repository_impl.dart';
+import 'package:kos_gdgoc/features/analysis/data/models/validation_result_dto.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/history/data/history_provider.dart';
+import 'package:kos_gdgoc/features/history/domain/history_record.dart';
 
 class AnalyzingPage extends ConsumerStatefulWidget {
   const AnalyzingPage({super.key});
@@ -80,80 +86,115 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
       }
     });
 
-    Future.delayed(const Duration(milliseconds: 3200), () {
-      if (!mounted || _cancelled) return;
-      _populateMockResult();
-      context.go('/analyze/result');
-    });
+    _runApiCall();
   }
 
-  void _populateMockResult() {
-    ref.read(analysisStateNotifierProvider.notifier).setResult(
-          const AnalysisResult(
-            riskScore: 82,
-            riskLabel: 'RISIKO TINGGI',
-            riskDescription:
-                'Listing ini tidak menunjukkan beberapa indikator risiko. BAHAYAAA disarankan utk verif lebih lanjut',
-            confidenceScore: 0.62,
-            confidenceHint:
-                'Lengkapi data "Tidak Tahu" untuk meningkatkan akurasi analisis',
-            redFlags: [
-              RedFlag(
-                title: 'Tekanan Bayar cepat',
-                description: 'Pemilik mendesak DP sebelum survei/lihat kos',
-                icon: 'speed',
-              ),
-              RedFlag(
-                title: 'Rekening Berbeda',
-                description: 'Nama rekening tidak sesuai dengan nama pemilik',
-                icon: 'account_balance',
-              ),
-              RedFlag(
-                title: 'Harga di Bawah Pasar',
-                description:
-                    'Harga lebih murah daripada harga rata-rata di area sekitar',
-                icon: 'trending_down',
-              ),
-              RedFlag(
-                title: 'Tidak Boleh Survei',
-                description: 'Pemilik menolak permintaan untuk survei langsung',
-                icon: 'block',
-              ),
-            ],
-            recommendations: [
-              'Jangan transfer uang apapun dulu',
-              'Bandingkan harga dengan listing di Mamikos/Rukita',
-              'Paksa jadwal survei langsung ke lokasi',
-              'Cek sertifikat ke BPN atau AHU Online',
-            ],
-            areaComparison: AreaComparison(
-              hargaListing: 'Rp 1.500.000 / bulan',
-              rataRataArea: 'Rp 1.800.000 / bulan',
-              selisih: '-17% (lebih murah)',
-              selisihLabel: '-17% (lebih murah)',
-            ),
-            chatTemplates: [
-              ChatTemplate(
-                number: 1,
-                title: 'Terkait DP sebelum survei',
-                body:
-                    'Halo kak, terima kasih sebelumnya atas informasinya.\nSaya tertarik dengan kos yang kakak tawarkan. Sebelum saya memutuskan, boleh saya pastikan dulu beberapa hal?\nTerkait pembayaran DP, apakah ada alasan pembayaran perlu dilakukan dalam waktu dekat? Apakah saya bisa melihat kamar/survei terlebih dahulu sebelum melakukan transfer?\nKalau nanti saya sudah bayar DP tapi ternyata tidak cocok setelah survei, apakah DP bisa dikembalikan?',
-              ),
-              ChatTemplate(
-                number: 2,
-                title: 'Terkait Harga di bawah rata-rata',
-                body:
-                    'Halo kak, saya mau tanya terkait harga kosnya.\nHarga yang ditawarkan terlihat lebih murah dibanding beberapa kos lain di area sekitar. Apakah ada alasan khusus, misalnya promo, fasilitas tertentu yang belum termasuk, atau kondisi kamar tertentu?\nApakah harga tersebut sudah termasuk listrik, air, wifi, dan fasilitas lainnya?',
-              ),
-              ChatTemplate(
-                number: 3,
-                title: 'Terkait nama rekening yang berbeda',
-                body:
-                    'Halo kak, saya ingin memastikan keamanan pembayaran sebelum transfer.\nRekening yang digunakan untuk pembayaran apakah atas nama pemilik kos langsung? Kalau berbeda, boleh saya tahu hubungan pemilik rekening dengan pemilik kos?\nBoleh juga minta konfirmasi nama lengkap pemilik kos dan bukti bahwa rekening tersebut memang resmi digunakan untuk pembayaran kos?',
-              ),
-            ],
-          ),
-        );
+  Future<void> _runApiCall() async {
+    // Show the UI for at least 3.2 seconds regardless of API speed.
+    final minDisplay = Future<void>.delayed(const Duration(milliseconds: 3200));
+
+    try {
+      final analysisState = ref.read(analysisStateNotifierProvider);
+      final api = ref.read(apiServiceProvider);
+      final repo = AnalysisRepositoryImpl(api);
+
+      // Run API + minimum display time in parallel.
+      final results = await Future.wait<dynamic>([
+        repo.validateListing(analysisState),
+        minDisplay,
+      ]);
+
+      if (!mounted || _cancelled) return;
+
+      // Mark all steps done.
+      _stepTimer?.cancel();
+      setState(() {
+        for (int i = 0; i < _statuses.length; i++) {
+          _statuses[i] = _StepStatus.done;
+        }
+      });
+
+      final raw = results[0] as Map<String, dynamic>;
+      final result = ValidationResultDto.fromJson(raw).toDomain();
+      ref.read(analysisStateNotifierProvider.notifier).setResult(result);
+
+      // Persist result to in-session history.
+      final riskLevel = result.riskScore >= 70
+          ? RiskLevel.tinggi
+          : result.riskScore >= 40
+              ? RiskLevel.sedang
+              : RiskLevel.rendah;
+      final historyRecord = HistoryRecord(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        namaKos: analysisState.basicInfo.namaKos.isNotEmpty
+            ? analysisState.basicInfo.namaKos
+            : 'Kos Tidak Diketahui',
+        lokasi: analysisState.basicInfo.lokasi,
+        hargaPerBulan: analysisState.basicInfo.hargaPerBulan.isNotEmpty
+            ? analysisState.basicInfo.hargaPerBulan
+            : '-',
+        sumberListing: analysisState.basicInfo.sumberListing,
+        imageUrl: '',
+        riskScore: result.riskScore,
+        riskLevel: riskLevel,
+        analysisDate: DateTime.now(),
+        confidenceScore: result.confidenceScore,
+        confidenceHint: result.confidenceHint,
+        riskDescription: result.riskDescription,
+        redFlags: result.redFlags,
+        recommendations: result.recommendations,
+        areaComparison: result.areaComparison,
+      );
+      ref.read(historyNotifierProvider.notifier).addRecord(historyRecord);
+
+      context.go('/analyze/result');
+    } catch (e) {
+      await minDisplay; // Still wait for minimum display even on error.
+      if (!mounted || _cancelled) return;
+      _stepTimer?.cancel();
+      _showApiError(_friendlyError(e));
+    }
+  }
+
+  String _friendlyError(Object e) {
+    if (e is DioException) {
+      final status = e.response?.statusCode;
+      if (status == 422) {
+        final detail = e.response?.data?['detail'];
+        if (detail != null) {
+          return 'Data tidak valid (422): $detail';
+        }
+        return 'Data tidak valid (422). Periksa kelengkapan informasi dan coba lagi.';
+      }
+      if (status != null) {
+        return 'Server error ($status). Coba lagi beberapa saat.';
+      }
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return 'Koneksi timeout. Periksa internet Anda dan coba lagi.';
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        return 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+      }
+    }
+    return 'Terjadi kesalahan tidak terduga. Coba lagi.';
+  }
+
+  void _showApiError(String message) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ErrorSheet(
+        message: message,
+        onDismiss: () {
+          Navigator.pop(context);
+          context.go('/analyze/overview');
+        },
+      ),
+    );
   }
 
   void _showCancelDialog() {
@@ -629,6 +670,75 @@ class _CancelSheet extends StatelessWidget {
             ElevatedButton(
               onPressed: onContinue,
               child: const Text('Lanjutkan Analisis'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorSheet extends StatelessWidget {
+  const _ErrorSheet({required this.message, required this.onDismiss});
+
+  final String message;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.chipRed,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.error_outline,
+                  color: AppColors.chipRedText, size: 28),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Analisis Gagal',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: onDismiss,
+              child: const Text('Kembali ke Overview'),
             ),
           ],
         ),

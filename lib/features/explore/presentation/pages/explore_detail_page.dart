@@ -85,11 +85,30 @@ class ExploreDetailPage extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // ── Ringkasan AI Section ──
-                    _AiSummarySection(detail: detail),
+                    ref.watch(kosAiSummaryProvider(kosId)).when(
+                      data: (summary) {
+                        return _AiSummarySection(
+                          detail: detail,
+                          aiSummary: summary?.shortSummary,
+                          positives: summary?.positiveHighlights,
+                          negatives: summary?.negativeHighlights,
+                          isLive: summary != null,
+                        );
+                      },
+                      loading: () => const _AiSummarySectionLoading(),
+                      error: (err, stack) => _AiSummarySection(
+                        detail: detail,
+                        isLive: false,
+                        warningMessage: 'Gagal memuat ringkasan live AI. Menampilkan data lokal.',
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
                     // ── Topik yang sering dibahas ──
-                    _TopikDibahasSection(topics: detail.topikDibahas),
+                    _TopikDibahasSection(
+                      topics: ref.watch(kosAiSummaryProvider(kosId)).valueOrNull?.topicTags ??
+                          detail.topikDibahas,
+                    ),
                     const SizedBox(height: 20),
 
                     // ── Review Terbaru ──
@@ -320,11 +339,28 @@ class _KosInfoHeader extends StatelessWidget {
 // ════════════════════════════════════════════════════════════════════
 
 class _AiSummarySection extends StatelessWidget {
-  const _AiSummarySection({required this.detail});
+  const _AiSummarySection({
+    required this.detail,
+    this.aiSummary,
+    this.positives,
+    this.negatives,
+    this.isLive = false,
+    this.warningMessage,
+  });
+
   final KosDetail detail;
+  final String? aiSummary;
+  final List<String>? positives;
+  final List<String>? negatives;
+  final bool isLive;
+  final String? warningMessage;
 
   @override
   Widget build(BuildContext context) {
+    final summaryText = aiSummary ?? detail.aiSummary;
+    final posHighlights = positives ?? detail.positiveHighlights;
+    final negHighlights = negatives ?? detail.negativeHighlights;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -347,21 +383,66 @@ class _AiSummarySection extends StatelessWidget {
                     size: 18, color: Colors.white),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Ringkasan AI',
-                style: TextStyle(
+              Text(
+                isLive ? 'Ringkasan AI (Live)' : 'Ringkasan AI',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
               ),
+              if (isLive) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Live',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF4F46E5),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 12),
 
+          if (warningMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFEF3C7)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Color(0xFFB45309)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      warningMessage!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFFB45309),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Summary paragraph
           Text(
-            detail.aiSummary,
+            summaryText,
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
@@ -371,151 +452,226 @@ class _AiSummarySection extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── Positive Highlights ──
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFBBF7D0),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.thumb_up_outlined,
-                        size: 13,
-                        color: Color(0xFF16A34A),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Positive Highlights',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF16A34A),
-                      ),
-                    ),
-                  ],
+          if (posHighlights.isNotEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFBBF7D0),
                 ),
-                const SizedBox(height: 10),
-                ...detail.positiveHighlights.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Icon(
-                            Icons.check_circle,
-                            size: 15,
-                            color: Color(0xFF22C55E),
-                          ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textPrimary,
-                              height: 1.4,
+                        child: const Icon(
+                          Icons.thumb_up_outlined,
+                          size: 13,
+                          color: Color(0xFF16A34A),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Positive Highlights',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF16A34A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...posHighlights.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(
+                              Icons.check_circle,
+                              size: 15,
+                              color: Color(0xFF22C55E),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
 
           // ── Negative Highlights ──
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFFECACA),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.warning_amber_rounded,
-                        size: 13,
-                        color: Color(0xFFDC2626),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Negative Highlights',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFFDC2626),
-                      ),
-                    ),
-                  ],
+          if (negHighlights.isNotEmpty) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFFECACA),
                 ),
-                const SizedBox(height: 10),
-                ...detail.negativeHighlights.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Icon(
-                            Icons.cancel,
-                            size: 15,
-                            color: Color(0xFFEF4444),
-                          ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textPrimary,
-                              height: 1.4,
+                        child: const Icon(
+                          Icons.warning_amber_rounded,
+                          size: 13,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Negative Highlights',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...negHighlights.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(
+                              Icons.cancel,
+                              size: 15,
+                              color: Color(0xFFEF4444),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AiSummarySectionLoading extends StatelessWidget {
+  const _AiSummarySectionLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7C3AED)),
                 ),
-              ],
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'AI sedang menyusun ringkasan...',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Placeholder lines
+          Container(
+            height: 12,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.chipGray.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 12,
+            width: 200,
+            decoration: BoxDecoration(
+              color: AppColors.chipGray.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 12,
+            width: 150,
+            decoration: BoxDecoration(
+              color: AppColors.chipGray.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(6),
             ),
           ),
         ],
