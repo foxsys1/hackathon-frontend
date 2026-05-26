@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
+import 'package:kos_gdgoc/features/analysis/data/models/validation_result_dto.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
 
 class AnalysisResultPage extends ConsumerWidget {
   const AnalysisResultPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final result = ref.watch(analysisStateNotifierProvider).result;
+    final state = ref.watch(analysisStateNotifierProvider);
+    final result = state.result;
+    final reviewSummary = ref.watch(reviewSummaryProvider);
     if (result == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -66,6 +71,14 @@ class AnalysisResultPage extends ConsumerWidget {
                     _RedFlagCard(redFlags: result.redFlags),
                     const SizedBox(height: 20),
 
+                    // Communication Analysis
+                    _CommunicationAnalysisCard(result: result),
+                    const SizedBox(height: 20),
+
+                    // Visual Analysis
+                    _VisualAnalysisCard(result: result),
+                    const SizedBox(height: 20),
+
                     // Recommendations
                     _RecommendationsCard(
                       recommendations: result.recommendations,
@@ -82,7 +95,13 @@ class AnalysisResultPage extends ConsumerWidget {
 
                     // Disclaimer
                     _DisclaimerCard(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
+
+                    // AI Review Summary (shown when user entered review texts)
+                    if (reviewSummary != null) ...[
+                      _ReviewSummaryCard(summary: reviewSummary),
+                      const SizedBox(height: 20),
+                    ],
 
                     // Action buttons row
                     Row(
@@ -100,8 +119,33 @@ class AnalysisResultPage extends ConsumerWidget {
                           child: _ActionCard(
                             icon: Icons.share_outlined,
                             title: 'Bagikan Hasil',
-                            subtitle: 'Kirim ke teman atau\norang tua',
-                            onTap: () {},
+                            subtitle: 'Kirim ke teman atau\norang teman',
+                            onTap: () {
+                              final namaKos = state.basicInfo.namaKos.isNotEmpty
+                                  ? state.basicInfo.namaKos
+                                  : 'Listing Kos';
+                              final flags = result.redFlags
+                                  .map((f) => '• ${f.title}')
+                                  .join('\n');
+                              final recs = result.recommendations
+                                  .map((r) => '• $r')
+                                  .join('\n');
+                              final shareText = '=== Hasil KosCheck ===\n'
+                                  'Kos: $namaKos\n'
+                                  'Risk Score: ${result.riskScore}/100\n'
+                                  'Status: ${result.riskDescription}\n\n'
+                                  'Red Flags:\n${flags.isNotEmpty ? flags : "Tidak ada"}\n\n'
+                                  'Rekomendasi:\n${recs.isNotEmpty ? recs : "Tidak ada"}\n\n'
+                                  'Dibuat dengan KosCheck App';
+                              Clipboard.setData(ClipboardData(text: shareText));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Hasil analisis disalin ke clipboard!'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -120,6 +164,8 @@ class AnalysisResultPage extends ConsumerWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     ref.read(analysisStateNotifierProvider.notifier).reset();
+                    ref.read(reviewTextsProvider.notifier).clear();
+                    ref.read(reviewSummaryProvider.notifier).clear();
                     context.go('/');
                   },
                   child: const Text('Selesai'),
@@ -132,7 +178,6 @@ class AnalysisResultPage extends ConsumerWidget {
     );
   }
 }
-
 
 class _RiskScoreCard extends StatelessWidget {
   const _RiskScoreCard({required this.result});
@@ -220,9 +265,7 @@ class _RiskScoreCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isHigh
-                        ? AppColors.chipRed
-                        : AppColors.chipYellow,
+                    color: isHigh ? AppColors.chipRed : AppColors.chipYellow,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -270,7 +313,6 @@ class _RiskScoreCard extends StatelessWidget {
     );
   }
 }
-
 
 class _ConfidenceCard extends StatelessWidget {
   const _ConfidenceCard({required this.result});
@@ -360,7 +402,6 @@ class _ConfidenceCard extends StatelessWidget {
     );
   }
 }
-
 
 class _RedFlagCard extends StatelessWidget {
   const _RedFlagCard({required this.redFlags});
@@ -478,7 +519,6 @@ class _RedFlagCard extends StatelessWidget {
   }
 }
 
-
 class _RecommendationsCard extends StatelessWidget {
   const _RecommendationsCard({required this.recommendations});
   final List<String> recommendations;
@@ -549,7 +589,6 @@ class _RecommendationsCard extends StatelessWidget {
     );
   }
 }
-
 
 class _AreaComparisonCard extends StatelessWidget {
   const _AreaComparisonCard({required this.comparison});
@@ -683,7 +722,6 @@ class _ComparisonRow extends StatelessWidget {
   }
 }
 
-
 class _DisclaimerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -729,7 +767,6 @@ class _DisclaimerCard extends StatelessWidget {
     );
   }
 }
-
 
 class _ActionCard extends StatelessWidget {
   const _ActionCard({
@@ -783,3 +820,525 @@ class _ActionCard extends StatelessWidget {
     );
   }
 }
+
+class _ReviewSummaryCard extends StatelessWidget {
+  const _ReviewSummaryCard({required this.summary});
+  final AIReviewSummaryDto summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.rate_review_outlined,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'AI Review Summary',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            summary.shortSummary,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          if (summary.positiveHighlights.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text(
+              'Poin Positif',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.chipGreenText,
+              ),
+            ),
+            const SizedBox(height: 6),
+            ...summary.positiveHighlights.map(
+              (h) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.check_circle_outline,
+                        size: 15, color: AppColors.chipGreenText),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        h,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textPrimary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (summary.negativeHighlights.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Poin Negatif',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.chipRedText,
+              ),
+            ),
+            const SizedBox(height: 6),
+            ...summary.negativeHighlights.map(
+              (h) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.cancel_outlined,
+                        size: 15, color: AppColors.chipRedText),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        h,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textPrimary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (summary.topicTags.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: summary.topicTags
+                  .map(
+                    (t) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        t,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Communication Analysis Card
+// ════════════════════════════════════════════════════════════════════
+
+class _CommunicationAnalysisCard extends StatelessWidget {
+  const _CommunicationAnalysisCard({required this.result});
+  final AnalysisResult result;
+
+  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+    final bool isPositive = invertColors ? !value : value;
+    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  value ? 'Ya' : 'Tidak',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.chat_outlined, size: 20, color: AppColors.textPrimary),
+              SizedBox(width: 8),
+              Text(
+                'Analisis Komunikasi',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (result.communicationSummary.isNotEmpty) ...[
+            Text(
+              result.communicationSummary,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'AI Risk Score',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${result.communicationRiskScore} / 100',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: result.communicationRiskScore >= 70
+                            ? const Color(0xFFDC2626)
+                            : result.communicationRiskScore >= 40
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pressure Level',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${result.pressureLevel} / 100',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: result.pressureLevel >= 70
+                            ? const Color(0xFFDC2626)
+                            : result.pressureLevel >= 40
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          _buildBooleanRow('Ada inkonsistensi?', result.inconsistenciesFound, invertColors: true),
+          _buildBooleanRow('Anomali pembayaran?', result.paymentAnomalyDetected, invertColors: true),
+          _buildBooleanRow('Desakan transfer?', result.urgencyDetected, invertColors: true),
+          _buildBooleanRow('Testimoni bot?', result.botTestimonialDetected, invertColors: true),
+          _buildBooleanRow('Gagal cross-check?', result.isCrossCheckFail, invertColors: true),
+          if (result.crossCheckDetails != null && result.crossCheckDetails!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.chipYellow.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      result.crossCheckDetails!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.chipYellowText,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Visual Analysis Card
+// ════════════════════════════════════════════════════════════════════
+
+class _VisualAnalysisCard extends StatelessWidget {
+  const _VisualAnalysisCard({required this.result});
+  final AnalysisResult result;
+
+  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+    final bool isPositive = invertColors ? !value : value;
+    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  value ? 'Ya' : 'Tidak',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.image_search_outlined, size: 20, color: AppColors.textPrimary),
+              SizedBox(width: 8),
+              Text(
+                'Analisis Visual',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (result.visualSummary.isNotEmpty) ...[
+            Text(
+              result.visualSummary,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          _buildBooleanRow('Interior terdeteksi?', result.roomInteriorDetected),
+          _buildBooleanRow('Foto realistis?', result.realisticImages),
+          _buildBooleanRow('Ada watermark?', result.watermarkDetected, invertColors: true),
+          if (result.watermarkSource != null && result.watermarkSource!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Sumber Watermark: ${result.watermarkSource}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Risiko Metadata Foto',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${result.metadataMatchRisk} / 100',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: result.metadataMatchRisk >= 70
+                            ? const Color(0xFFDC2626)
+                            : result.metadataMatchRisk >= 40
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (result.metadataSummary != null && result.metadataSummary!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.chipYellow.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      result.metadataSummary!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.chipYellowText,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+

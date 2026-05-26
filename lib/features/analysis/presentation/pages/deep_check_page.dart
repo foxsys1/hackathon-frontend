@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
 import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_bar.dart';
 
 class DeepCheckPage extends ConsumerStatefulWidget {
@@ -14,12 +19,21 @@ class DeepCheckPage extends ConsumerStatefulWidget {
 
 class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
   late DeepCheck _dc;
+  late final TextEditingController _reviewCtrl;
+  final _picker = ImagePicker();
   bool _waExportExpanded = false;
 
   @override
   void initState() {
     super.initState();
     _dc = ref.read(analysisStateNotifierProvider).deepCheck;
+    _reviewCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _reviewCtrl.dispose();
+    super.dispose();
   }
 
   void _saveAndContinue() {
@@ -27,26 +41,38 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
     context.push('/analyze/overview');
   }
 
-  void _mockPickWhatsapp() {
-    setState(() {
-      _dc = _dc.copyWith(
-        whatsappChatPaths: [
-          ..._dc.whatsappChatPaths,
-          'wa_chat_export_${_dc.whatsappChatPaths.length + 1}.txt',
-        ],
-      );
-    });
+  void _pickWhatsappChat() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['txt', 'zip'],
+      allowMultiple: false,
+    );
+    if (!mounted) return;
+    final path = result?.files.firstOrNull?.path;
+    if (path != null) {
+      setState(() {
+        _dc = _dc.copyWith(
+          whatsappChatPaths: [..._dc.whatsappChatPaths, path],
+        );
+      });
+    }
   }
 
-  void _mockPickScreenshot() {
-    setState(() {
-      _dc = _dc.copyWith(
-        testimoniScreenshotPaths: [
-          ..._dc.testimoniScreenshotPaths,
-          'screenshot_${_dc.testimoniScreenshotPaths.length + 1}.png',
-        ],
-      );
-    });
+  void _pickScreenshot() async {
+    if (_dc.testimoniScreenshotPaths.length >= 5) return;
+    final images = await _picker.pickMultiImage(imageQuality: 80);
+    if (!mounted) return;
+    if (images.isNotEmpty) {
+      final remaining = 5 - _dc.testimoniScreenshotPaths.length;
+      setState(() {
+        _dc = _dc.copyWith(
+          testimoniScreenshotPaths: [
+            ..._dc.testimoniScreenshotPaths,
+            ...images.take(remaining).map((x) => x.path),
+          ],
+        );
+      });
+    }
   }
 
   @override
@@ -130,7 +156,7 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
                         _UploadBox(
                           label: 'Upload file chat Whatsapp',
                           subtitle: '.TXT atau .ZIP — Maks. 20MB per file',
-                          onTap: _mockPickWhatsapp,
+                          onTap: _pickWhatsappChat,
                         ),
                         if (_dc.whatsappChatPaths.isNotEmpty) ...[
                           const SizedBox(height: 12),
@@ -222,15 +248,14 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
                       children: [
                         _UploadBox(
                           label: 'Upload screenshot',
-                          subtitle:
-                              'PNG, JPG — Maks 5 file — 20MB per file',
-                          onTap: _mockPickScreenshot,
+                          subtitle: 'PNG, JPG — Maks 5 file — 20MB per file',
+                          onTap: _pickScreenshot,
                         ),
                         if (_dc.testimoniScreenshotPaths.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           _FileChipRow(
                             paths: _dc.testimoniScreenshotPaths,
-                            icon: Icons.image,
+                            isImage: true,
                             onRemove: (p) => setState(() {
                               _dc = _dc.copyWith(
                                 testimoniScreenshotPaths: _dc
@@ -241,6 +266,112 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
                             }),
                           ),
                         ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section 3 — Review teks
+                  _SectionCard(
+                    number: 3,
+                    title: 'Review dari Penghuni Lain',
+                    subtitle:
+                        'Tempel teks review dari platform (Mamikos, Google, dll.) untuk dianalisis AI.',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _reviewCtrl,
+                                minLines: 2,
+                                maxLines: 4,
+                                style: const TextStyle(fontSize: 13),
+                                decoration: const InputDecoration(
+                                  hintText: 'Tempel teks review di sini...',
+                                  hintStyle: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (_reviewCtrl.text.trim().isNotEmpty) {
+                                    ref
+                                        .read(reviewTextsProvider.notifier)
+                                        .add(_reviewCtrl.text);
+                                    _reviewCtrl.clear();
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text('Tambah',
+                                    style: TextStyle(fontSize: 13)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Builder(
+                          builder: (context) {
+                            final reviews = ref.watch(reviewTextsProvider);
+                            if (reviews.isEmpty) return const SizedBox.shrink();
+                            return Column(
+                              children: [
+                                const SizedBox(height: 12),
+                                ...reviews.map(
+                                  (r) => Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding:
+                                        const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.chipGray,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border:
+                                          Border.all(color: AppColors.border),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            r,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.textPrimary,
+                                              height: 1.4,
+                                            ),
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        GestureDetector(
+                                          onTap: () => ref
+                                              .read(
+                                                  reviewTextsProvider.notifier)
+                                              .remove(r),
+                                          child: const Icon(Icons.close,
+                                              size: 18,
+                                              color: AppColors.textSecondary),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -271,7 +402,6 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
     );
   }
 }
-
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
@@ -393,8 +523,8 @@ class _UploadBox extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(
-                  fontSize: 11, color: AppColors.textSecondary),
+              style:
+                  const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -408,11 +538,13 @@ class _FileChipRow extends StatelessWidget {
     required this.paths,
     required this.onRemove,
     this.icon = Icons.image,
+    this.isImage = false,
   });
 
   final List<String> paths;
   final ValueChanged<String> onRemove;
   final IconData icon;
+  final bool isImage;
 
   @override
   Widget build(BuildContext context) {
@@ -425,17 +557,34 @@ class _FileChipRow extends StatelessWidget {
         itemBuilder: (_, i) {
           return Stack(
             children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.chipGray,
+              if (isImage)
+                ClipRRect(
                   borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(paths[i]),
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 72,
+                      height: 72,
+                      color: AppColors.chipGray,
+                      child: Icon(icon, color: AppColors.iconDefault, size: 28),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.chipGray,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Icon(icon, color: AppColors.iconDefault, size: 28),
+                  ),
                 ),
-                child: Center(
-                  child: Icon(icon, color: AppColors.iconDefault, size: 28),
-                ),
-              ),
               Positioned(
                 top: 2,
                 right: 2,
@@ -448,8 +597,8 @@ class _FileChipRow extends StatelessWidget {
                       color: AppColors.textPrimary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close,
-                        color: Colors.white, size: 14),
+                    child:
+                        const Icon(Icons.close, color: Colors.white, size: 14),
                   ),
                 ),
               ),

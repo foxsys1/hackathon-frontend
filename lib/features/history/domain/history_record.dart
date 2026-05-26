@@ -25,6 +25,22 @@ class HistoryRecord {
     required this.recommendations,
     this.areaComparison,
     this.riskDescription = '',
+    this.communicationSummary = '',
+    this.visualSummary = '',
+    this.communicationRiskScore = 0,
+    this.pressureLevel = 0,
+    this.inconsistenciesFound = false,
+    this.paymentAnomalyDetected = false,
+    this.urgencyDetected = false,
+    this.botTestimonialDetected = false,
+    this.isCrossCheckFail = false,
+    this.crossCheckDetails,
+    this.roomInteriorDetected = false,
+    this.realisticImages = false,
+    this.watermarkDetected = false,
+    this.watermarkSource,
+    this.metadataMatchRisk = 0,
+    this.metadataSummary,
   });
 
   final String id;
@@ -42,6 +58,24 @@ class HistoryRecord {
   final List<RedFlag> redFlags;
   final List<String> recommendations;
   final AreaComparison? areaComparison;
+  
+  final String communicationSummary;
+  final String visualSummary;
+  final int communicationRiskScore;
+  final int pressureLevel;
+  final bool inconsistenciesFound;
+  final bool paymentAnomalyDetected;
+  final bool urgencyDetected;
+  final bool botTestimonialDetected;
+  final bool isCrossCheckFail;
+  final String? crossCheckDetails;
+  
+  final bool roomInteriorDetected;
+  final bool realisticImages;
+  final bool watermarkDetected;
+  final String? watermarkSource;
+  final int metadataMatchRisk;
+  final String? metadataSummary;
 
   String get riskLabel {
     switch (riskLevel) {

@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
 import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_bar.dart';
@@ -19,6 +22,7 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
   late final TextEditingController _mapsCtrl;
   late final TextEditingController _kontakCtrl;
   late final TextEditingController _rekeningCtrl;
+  final _picker = ImagePicker();
 
   @override
   void initState() {
@@ -130,17 +134,24 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                           ),
                           const SizedBox(height: 12),
                           _UploadBox(
-                            label: 'Pilih foto atau video',
-                            subtitle: 'PNG, JPG, MP4 — Maks. 20MB per file',
-                            onTap: () {
-                              setState(() {
-                                _qc = _qc.copyWith(
-                                  uploadedPhotoPaths: [
-                                    ..._qc.uploadedPhotoPaths,
-                                    'mock_photo_${_qc.uploadedPhotoPaths.length + 1}.jpg',
-                                  ],
-                                );
-                              });
+                            label: 'Pilih foto',
+                            subtitle: 'PNG, JPG — Maks. 5 foto',
+                            onTap: () async {
+                              if (_qc.uploadedPhotoPaths.length >= 5) return;
+                              final images = await _picker.pickMultiImage(
+                                imageQuality: 80,
+                              );
+                              if (images.isNotEmpty) {
+                                final remaining = 5 - _qc.uploadedPhotoPaths.length;
+                                setState(() {
+                                  _qc = _qc.copyWith(
+                                    uploadedPhotoPaths: [
+                                      ..._qc.uploadedPhotoPaths,
+                                      ...images.take(remaining).map((x) => x.path),
+                                    ],
+                                  );
+                                });
+                              }
                             },
                           ),
                           if (_qc.uploadedPhotoPaths.isNotEmpty) ...[
@@ -542,15 +553,19 @@ class _FileChipRow extends StatelessWidget {
         itemBuilder: (_, i) {
           return Stack(
             children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.chipGray,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: Icon(Icons.image, color: AppColors.iconDefault, size: 28),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(paths[i]),
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 72,
+                    height: 72,
+                    color: AppColors.chipGray,
+                    child: const Icon(Icons.image, color: AppColors.iconDefault, size: 28),
+                  ),
                 ),
               ),
               Positioned(

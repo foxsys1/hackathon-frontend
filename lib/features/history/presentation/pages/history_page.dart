@@ -1,23 +1,25 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
-import 'package:kos_gdgoc/features/history/data/mock_history_data.dart';
+import 'package:kos_gdgoc/features/history/data/history_provider.dart';
 import 'package:kos_gdgoc/features/history/domain/history_record.dart';
 
-class HistoryPage extends StatefulWidget {
+class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  ConsumerState<HistoryPage> createState() => _HistoryPageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> {
+class _HistoryPageState extends ConsumerState<HistoryPage> {
   String _searchQuery = '';
   String _sortBy = 'Terbaru';
   int _visibleCount = 6;
 
-  List<HistoryRecord> get _filtered {
-    var list = mockHistoryRecords.where((r) {
+  List<HistoryRecord> _computeFiltered(List<HistoryRecord> allRecords) {
+    var list = allRecords.where((r) {
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return r.namaKos.toLowerCase().contains(q) ||
@@ -32,19 +34,31 @@ class _HistoryPageState extends State<HistoryPage> {
     return list;
   }
 
-  int get _totalAnalisis => mockHistoryRecords.length;
-  int get _rendahCount =>
-      mockHistoryRecords.where((r) => r.riskLevel == RiskLevel.rendah).length;
-  int get _sedangCount =>
-      mockHistoryRecords.where((r) => r.riskLevel == RiskLevel.sedang).length;
-  int get _tinggiCount =>
-      mockHistoryRecords.where((r) => r.riskLevel == RiskLevel.tinggi).length;
-
   @override
   Widget build(BuildContext context) {
-    final filtered = _filtered;
+    final sessionRecords = ref.watch(historyNotifierProvider);
+    final backendAsync = ref.watch(backendHistoryProvider);
+    final isBackendLoading = backendAsync.isLoading;
+    final allRecords = backendAsync.when(
+      loading: () => sessionRecords,
+      error: (_, __) => sessionRecords,
+      data: (backendRecords) {
+        final backendIds = {for (final r in backendRecords) r.id};
+        final sessionOnly =
+            sessionRecords.where((r) => !backendIds.contains(r.id)).toList();
+        return [...sessionOnly, ...backendRecords];
+      },
+    );
+    final filtered = _computeFiltered(allRecords);
     final visible = filtered.take(_visibleCount).toList();
     final hasMore = filtered.length > _visibleCount;
+    final totalAnalisis = allRecords.length;
+    final rendahCount =
+        allRecords.where((r) => r.riskLevel == RiskLevel.rendah).length;
+    final sedangCount =
+        allRecords.where((r) => r.riskLevel == RiskLevel.sedang).length;
+    final tinggiCount =
+        allRecords.where((r) => r.riskLevel == RiskLevel.tinggi).length;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -88,23 +102,49 @@ class _HistoryPageState extends State<HistoryPage> {
                             ],
                           ),
                         ),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.divider),
+                        if (isBackendLoading)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        else
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            color: AppColors.textSecondary,
+                            tooltip: 'Segarkan riwayat',
+                            onPressed: () =>
+                                ref.invalidate(backendHistoryProvider),
                           ),
-                          child: IconButton(
-                            icon: const Icon(Icons.filter_list,
-                                size: 20, color: AppColors.textPrimary),
-                            padding: EdgeInsets.zero,
-                            onPressed: () {},
-                          ),
-                        ),
                       ],
                     ),
+                    if (backendAsync.hasError)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.chipYellow,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.wifi_off,
+                                size: 13, color: AppColors.chipYellowText),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Riwayat server tidak tersedia – data lokal',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.chipYellowText),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 16),
 
                     // Search bar
@@ -136,10 +176,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
                     // Activity summary card
                     _ActivitySummaryCard(
-                      total: _totalAnalisis,
-                      rendah: _rendahCount,
-                      sedang: _sedangCount,
-                      tinggi: _tinggiCount,
+                      total: totalAnalisis,
+                      rendah: rendahCount,
+                      sedang: sedangCount,
+                      tinggi: tinggiCount,
                       isNarrow: isNarrow,
                     ),
                     const SizedBox(height: 24),
@@ -179,8 +219,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     if (hasMore)
                       Center(
                         child: TextButton.icon(
-                          onPressed: () =>
-                              setState(() => _visibleCount += 6),
+                          onPressed: () => setState(() => _visibleCount += 6),
                           icon: const Icon(Icons.expand_more, size: 18),
                           label: const Text('Tampilkan lebih banyak'),
                           style: TextButton.styleFrom(
@@ -214,7 +253,6 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 }
-
 
 class _ActivitySummaryCard extends StatelessWidget {
   const _ActivitySummaryCard({
@@ -348,7 +386,6 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-
 class _SortDropdown extends StatelessWidget {
   const _SortDropdown({required this.value, required this.onChanged});
 
@@ -391,7 +428,6 @@ class _SortDropdown extends StatelessWidget {
     );
   }
 }
-
 
 class _HistoryRecordCard extends StatelessWidget {
   const _HistoryRecordCard({
@@ -486,6 +522,7 @@ class _HistoryRecordCard extends StatelessWidget {
                     color: AppColors.chipGray,
                     child: Image.network(
                       record.imageUrl,
+                      headers: kIsWeb ? null : const {'Referer': 'https://mamikos.com/'},
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Center(
                         child: Icon(Icons.home_outlined,
@@ -568,9 +605,10 @@ class _HistoryRecordCard extends StatelessWidget {
                             child: CircularProgressIndicator(
                               value: record.riskScore / 100,
                               strokeWidth: 4,
-                              backgroundColor: AppColors.border.withOpacity(0.3),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  _scoreColor()),
+                              backgroundColor:
+                                  AppColors.border.withOpacity(0.3),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(_scoreColor()),
                               strokeCap: StrokeCap.round,
                             ),
                           ),
