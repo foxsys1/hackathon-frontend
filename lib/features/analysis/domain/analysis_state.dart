@@ -101,7 +101,8 @@ class AnalysisResult with _$AnalysisResult {
     @Default([]) List<String> recommendations,
     @Default(null) AreaComparison? areaComparison,
     @Default([]) List<ChatTemplate> chatTemplates,
-    @Default('') String communicationSummary,
+
+    // ── Communication Analysis (full data) ──
     @Default(0) int communicationRiskScore,
     @Default(0) int pressureLevel,
     @Default(false) bool inconsistenciesFound,
@@ -110,13 +111,20 @@ class AnalysisResult with _$AnalysisResult {
     @Default(false) bool botTestimonialDetected,
     @Default(false) bool isCrossCheckFail,
     @Default(null) String? crossCheckDetails,
-    @Default('') String visualSummary,
+    @Default('') String communicationSummary,
+
+    // ── Visual Analysis (full data) ──
     @Default(false) bool roomInteriorDetected,
-    @Default(false) bool realisticImages,
     @Default(false) bool watermarkDetected,
     @Default(null) String? watermarkSource,
+    @Default(false) bool realisticImages,
     @Default(0) int metadataMatchRisk,
     @Default(null) String? metadataSummary,
+    @Default('') String visualSummary,
+
+    // ── Extra metadata ──
+    @Default(null) String? recordId,
+    @Default('') String status,
   }) = _AnalysisResult;
 }
 

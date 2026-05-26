@@ -43,5 +43,32 @@ class KosListing with _$KosListing {
 
     /// Source URL from the discover API (empty for mock data)
     @Default('') String listingUrl,
+
+    /// Listing description from the backend
+    @Default('') String description,
+
+    /// Data source, e.g. "Mamikos"
+    @Default('') String source,
+
+    /// Street address (may be empty)
+    @Default('') String address,
+
+    /// Latitude coordinate
+    @Default(null) double? latitude,
+
+    /// Longitude coordinate
+    @Default(null) double? longitude,
+
+    /// Whether this listing was scraped from an external source
+    @Default(false) bool isScraped,
+
+    /// Room-specific facilities, e.g. ["Kasur", "AC", "K. Mandi Dalam"]
+    @Default([]) List<String> roomFacilities,
+
+    /// Shared facilities, e.g. ["WiFi", "Dapur", "Parkir"]
+    @Default([]) List<String> sharedFacilities,
+
+    /// Last updated timestamp from backend
+    @Default(null) DateTime? updatedAt,
   }) = _KosListing;
 }

@@ -1,30 +1,176 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kos_gdgoc/core/network/api_service.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
+import 'package:kos_gdgoc/features/analysis/data/models/validation_result_dto.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
 import 'package:kos_gdgoc/features/history/data/history_provider.dart';
 import 'package:kos_gdgoc/features/history/domain/history_record.dart';
 
-class HistoryDetailPage extends ConsumerWidget {
+class HistoryDetailPage extends ConsumerStatefulWidget {
   const HistoryDetailPage({super.key, required this.id});
 
   final String id;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final liveRecords = ref.watch(historyNotifierProvider);
-    final record = liveRecords.cast<HistoryRecord?>().firstWhere(
-          (r) => r!.id == id,
-          orElse: () => null,
-        );
+  ConsumerState<HistoryDetailPage> createState() => _HistoryDetailPageState();
+}
 
-    if (record == null) {
+class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
+  HistoryRecord? _record;
+  bool _isLoading = false;
+  bool _notFound = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecord();
+  }
+
+  Future<void> _loadRecord() async {
+    // Check the in-session store first (fastest path, has richest data).
+    final sessionRecord = ref
+        .read(historyNotifierProvider)
+        .cast<HistoryRecord?>()
+        .firstWhere((r) => r!.id == widget.id, orElse: () => null);
+
+    if (sessionRecord != null) {
+      _record =
+          sessionRecord; // direct assignment is safe in initState sync path
+      return;
+    }
+
+    // Fall back to GET /api/v1/history/{record_id}.
+    setState(() {
+      _isLoading = true;
+      _notFound = false;
+    });
+    try {
+      final api = ref.read(apiServiceProvider);
+      final raw = await api.getHistoryRecord(widget.id);
+      if (!mounted) return;
+      if (raw != null) {
+        setState(() {
+          _record = _parseDetailRecord(raw);
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _notFound = true;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _notFound = true;
+      });
+    }
+  }
+
+  /// Parses the full saved payload returned by GET /api/v1/history/{id}.
+  /// The backend stores { form_data: {...}, result: {...}, created_at: ... }.
+  HistoryRecord _parseDetailRecord(Map<String, dynamic> raw) {
+    final formData = raw['form_data'] as Map<String, dynamic>? ?? {};
+    final resultRaw = raw['result'] as Map<String, dynamic>? ?? raw;
+    final dto = ValidationResultDto.fromJson(resultRaw);
+    final analysis = dto.toDomain();
+    final riskScore = dto.anomalyScore;
+    final riskLevel = riskScore >= 70
+        ? RiskLevel.tinggi
+        : riskScore >= 40
+            ? RiskLevel.sedang
+            : RiskLevel.rendah;
+    final createdAt =
+        DateTime.tryParse(raw['created_at'] as String? ?? '') ?? DateTime.now();
+    final price = (formData['price'] as num?)?.toDouble() ?? 0;
+
+    return HistoryRecord(
+      id: raw['id'] as String? ?? widget.id,
+      namaKos: formData['listing_name'] as String? ?? '',
+      lokasi: formData['area_name'] as String? ?? '',
+      hargaPerBulan: price > 0 ? 'Rp ${_fmtPrice(price.toInt())} / bulan' : '-',
+      sumberListing: formData['source'] as String? ?? '',
+      imageUrl: formData['image_url'] as String? ??
+          'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=300&fit=crop',
+      riskScore: riskScore,
+      riskLevel: riskLevel,
+      analysisDate: createdAt,
+      confidenceScore: analysis.confidenceScore,
+      confidenceHint: analysis.confidenceHint,
+      riskDescription: analysis.riskDescription,
+      redFlags: analysis.redFlags,
+      recommendations: analysis.recommendations,
+      areaComparison: analysis.areaComparison,
+      communicationSummary: analysis.communicationSummary,
+      visualSummary: analysis.visualSummary,
+      communicationRiskScore: analysis.communicationRiskScore,
+      pressureLevel: analysis.pressureLevel,
+      inconsistenciesFound: analysis.inconsistenciesFound,
+      paymentAnomalyDetected: analysis.paymentAnomalyDetected,
+      urgencyDetected: analysis.urgencyDetected,
+      botTestimonialDetected: analysis.botTestimonialDetected,
+      isCrossCheckFail: analysis.isCrossCheckFail,
+      crossCheckDetails: analysis.crossCheckDetails,
+      roomInteriorDetected: analysis.roomInteriorDetected,
+      realisticImages: analysis.realisticImages,
+      watermarkDetected: analysis.watermarkDetected,
+      watermarkSource: analysis.watermarkSource,
+      metadataMatchRisk: analysis.metadataMatchRisk,
+      metadataSummary: analysis.metadataSummary,
+    );
+  }
+
+  static String _fmtPrice(int price) {
+    final str = price.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buf.write('.');
+      buf.write(str[i]);
+    }
+    return buf.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
       return Scaffold(
+        backgroundColor: AppColors.scaffoldBg,
         appBar: AppBar(title: const Text('Detail Hasil')),
-        body: const Center(child: Text('Data tidak ditemukan')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
+
+    if (_notFound || _record == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Detail Hasil')),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.history_outlined,
+                  size: 48, color: AppColors.textSecondary),
+              const SizedBox(height: 12),
+              const Text(
+                'Data tidak ditemukan',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: _loadRecord,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Coba lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final record = _record!;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -86,6 +232,14 @@ class HistoryDetailPage extends ConsumerWidget {
                           _RedFlagCard(redFlags: record.redFlags),
                           const SizedBox(height: 20),
                         ],
+                        
+                        // Communication Analysis
+                        _CommunicationAnalysisCard(record: record),
+                        const SizedBox(height: 20),
+                        
+                        // Visual Analysis
+                        _VisualAnalysisCard(record: record),
+                        const SizedBox(height: 20),
 
                         // Recommendations
                         if (record.recommendations.isNotEmpty) ...[
@@ -222,6 +376,7 @@ class _KosInfoHeader extends StatelessWidget {
                   color: AppColors.chipGray,
                   child: Image.network(
                     record.imageUrl,
+                    headers: kIsWeb ? null : const {'Referer': 'https://mamikos.com/'},
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const Center(
                       child: Icon(Icons.home_outlined,
@@ -563,6 +718,371 @@ class _ConfidenceCard extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Communication Analysis Card
+// ════════════════════════════════════════════════════════════════════
+
+class _CommunicationAnalysisCard extends StatelessWidget {
+  const _CommunicationAnalysisCard({required this.record});
+  final HistoryRecord record;
+
+  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+    final bool isPositive = invertColors ? !value : value;
+    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  value ? 'Ya' : 'Tidak',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.chat_outlined, size: 20, color: AppColors.textPrimary),
+              SizedBox(width: 8),
+              Text(
+                'Analisis Komunikasi',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (record.communicationSummary.isNotEmpty) ...[
+            Text(
+              record.communicationSummary,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'AI Risk Score',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${record.communicationRiskScore} / 100',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: record.communicationRiskScore >= 70
+                            ? const Color(0xFFDC2626)
+                            : record.communicationRiskScore >= 40
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Pressure Level',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${record.pressureLevel} / 100',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: record.pressureLevel >= 70
+                            ? const Color(0xFFDC2626)
+                            : record.pressureLevel >= 40
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          _buildBooleanRow('Ada inkonsistensi?', record.inconsistenciesFound, invertColors: true),
+          _buildBooleanRow('Anomali pembayaran?', record.paymentAnomalyDetected, invertColors: true),
+          _buildBooleanRow('Desakan transfer?', record.urgencyDetected, invertColors: true),
+          _buildBooleanRow('Testimoni bot?', record.botTestimonialDetected, invertColors: true),
+          _buildBooleanRow('Gagal cross-check?', record.isCrossCheckFail, invertColors: true),
+          if (record.crossCheckDetails != null && record.crossCheckDetails!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.chipYellow.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      record.crossCheckDetails!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.chipYellowText,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Visual Analysis Card
+// ════════════════════════════════════════════════════════════════════
+
+class _VisualAnalysisCard extends StatelessWidget {
+  const _VisualAnalysisCard({required this.record});
+  final HistoryRecord record;
+
+  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+    final bool isPositive = invertColors ? !value : value;
+    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
+    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  value ? 'Ya' : 'Tidak',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.image_search_outlined, size: 20, color: AppColors.textPrimary),
+              SizedBox(width: 8),
+              Text(
+                'Analisis Visual',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (record.visualSummary.isNotEmpty) ...[
+            Text(
+              record.visualSummary,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          _buildBooleanRow('Interior terdeteksi?', record.roomInteriorDetected),
+          _buildBooleanRow('Foto realistis?', record.realisticImages),
+          _buildBooleanRow('Ada watermark?', record.watermarkDetected, invertColors: true),
+          if (record.watermarkSource != null && record.watermarkSource!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Sumber Watermark: ${record.watermarkSource}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Risiko Metadata Foto',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${record.metadataMatchRisk} / 100',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: record.metadataMatchRisk >= 70
+                            ? const Color(0xFFDC2626)
+                            : record.metadataMatchRisk >= 40
+                                ? const Color(0xFFF59E0B)
+                                : const Color(0xFF16A34A),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (record.metadataSummary != null && record.metadataSummary!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.chipYellow.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      record.metadataSummary!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.chipYellowText,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

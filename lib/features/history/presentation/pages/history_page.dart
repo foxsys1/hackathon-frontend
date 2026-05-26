@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,8 +36,19 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final liveRecords = ref.watch(historyNotifierProvider);
-    final allRecords = liveRecords;
+    final sessionRecords = ref.watch(historyNotifierProvider);
+    final backendAsync = ref.watch(backendHistoryProvider);
+    final isBackendLoading = backendAsync.isLoading;
+    final allRecords = backendAsync.when(
+      loading: () => sessionRecords,
+      error: (_, __) => sessionRecords,
+      data: (backendRecords) {
+        final backendIds = {for (final r in backendRecords) r.id};
+        final sessionOnly =
+            sessionRecords.where((r) => !backendIds.contains(r.id)).toList();
+        return [...sessionOnly, ...backendRecords];
+      },
+    );
     final filtered = _computeFiltered(allRecords);
     final visible = filtered.take(_visibleCount).toList();
     final hasMore = filtered.length > _visibleCount;
@@ -90,8 +102,49 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                             ],
                           ),
                         ),
+                        if (isBackendLoading)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        else
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            color: AppColors.textSecondary,
+                            tooltip: 'Segarkan riwayat',
+                            onPressed: () =>
+                                ref.invalidate(backendHistoryProvider),
+                          ),
                       ],
                     ),
+                    if (backendAsync.hasError)
+                      Container(
+                        margin: const EdgeInsets.only(top: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppColors.chipYellow,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.wifi_off,
+                                size: 13, color: AppColors.chipYellowText),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Riwayat server tidak tersedia – data lokal',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.chipYellowText),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 16),
 
                     // Search bar
@@ -469,6 +522,7 @@ class _HistoryRecordCard extends StatelessWidget {
                     color: AppColors.chipGray,
                     child: Image.network(
                       record.imageUrl,
+                      headers: kIsWeb ? null : const {'Referer': 'https://mamikos.com/'},
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Center(
                         child: Icon(Icons.home_outlined,

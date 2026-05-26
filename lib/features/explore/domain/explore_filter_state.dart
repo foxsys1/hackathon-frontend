@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
-import 'package:kos_gdgoc/features/explore/data/mock_kos_data.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 
 part 'explore_filter_state.freezed.dart';
@@ -76,8 +75,7 @@ class ExploreFilterNotifier extends _$ExploreFilterNotifier {
   void setMinimumRating(double? rating) =>
       state = state.copyWith(minimumRating: rating);
 
-  void setSortBy(SortMetric metric) =>
-      state = state.copyWith(sortBy: metric);
+  void setSortBy(SortMetric metric) => state = state.copyWith(sortBy: metric);
 
   void reset() => state = const ExploreFilterState();
 }
@@ -87,10 +85,10 @@ class ExploreFilterNotifier extends _$ExploreFilterNotifier {
 @riverpod
 List<KosListing> filteredKosListings(FilteredKosListingsRef ref) {
   final filter = ref.watch(exploreFilterNotifierProvider);
-  // Use live API data; fall back to mock when still loading or API is empty.
+  // Use live API data only — no mock fallback.
   final apiAsync = ref.watch(apiKosListingsProvider);
   var listings = List<KosListing>.from(
-    apiAsync.valueOrNull ?? mockKosListings,
+    apiAsync.valueOrNull ?? <KosListing>[],
   );
 
   // Search filter
@@ -119,8 +117,7 @@ List<KosListing> filteredKosListings(FilteredKosListingsRef ref) {
   // Facility filter
   if (filter.selectedFacilities.isNotEmpty) {
     listings = listings.where((k) {
-      return filter.selectedFacilities
-          .every((f) => k.facilities.contains(f));
+      return filter.selectedFacilities.every((f) => k.facilities.contains(f));
     }).toList();
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
@@ -6,6 +7,10 @@ import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 ///
 /// Matches the mockup layout: image | info + distance badge, price, rating,
 /// AI summary pill, facility chips, "Lihat Detail" link.
+/// CORS proxy base URL – routes image requests through the proxy on Flutter Web
+/// to avoid cross-origin errors when loading images from third-party sources.
+const _corsProxy = 'https://cors-proxy-two-gules.vercel.app/?url=';
+
 class KosCard extends StatelessWidget {
   const KosCard({super.key, required this.listing, this.onTap});
 
@@ -27,6 +32,15 @@ class KosCard extends StatelessWidget {
       return '${(km * 1000).round()} m';
     }
     return '${km.toStringAsFixed(1)} km';
+  }
+
+  /// Returns the image URL, routed through the CORS proxy on Flutter Web.
+  String _resolveImageUrl(String url) {
+    if (url.isEmpty) return url;
+    if (kIsWeb) {
+      return '$_corsProxy${Uri.encodeComponent(url)}';
+    }
+    return url;
   }
 
   @override
@@ -59,7 +73,7 @@ class KosCard extends StatelessWidget {
                     width: 80,
                     height: 80,
                     child: Image.network(
-                      listing.imageUrl,
+                      _resolveImageUrl(listing.imageUrl),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: AppColors.chipGray,
@@ -96,23 +110,24 @@ class KosCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           // Distance badge
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.location_on,
-                                  size: 12,
-                                  color: AppColors.primary.withOpacity(0.7)),
-                              const SizedBox(width: 2),
-                              Text(
-                                _formatDistance(listing.distanceKm),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary.withOpacity(0.8),
+                          if (listing.distanceKm >= 0)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on,
+                                    size: 12,
+                                    color: AppColors.primary.withOpacity(0.7)),
+                                const SizedBox(width: 2),
+                                Text(
+                                  _formatDistance(listing.distanceKm),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary.withOpacity(0.8),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -149,30 +164,25 @@ class KosCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
 
-                      // Rating
-                      Row(
-                        children: [
-                          const Icon(Icons.star,
-                              size: 14, color: Color(0xFFF59E0B)),
-                          const SizedBox(width: 3),
-                          Text(
-                            listing.rating.toStringAsFixed(1),
+                      // Source badge
+                      if (listing.source.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            listing.source,
                             style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF4F46E5),
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '(${listing.reviewCount} review)',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
                     ],
                   ),
                 ),

@@ -33,6 +33,36 @@ class KosDetail with _$KosDetail {
 
     /// Recent reviews
     required List<KosReview> reviews,
+
+    /// Full listing description from backend
+    @Default('') String description,
+
+    /// Data source, e.g. "Mamikos"
+    @Default('') String source,
+
+    /// Street address
+    @Default('') String address,
+
+    /// Latitude coordinate
+    @Default(null) double? latitude,
+
+    /// Longitude coordinate
+    @Default(null) double? longitude,
+
+    /// Whether the listing was scraped
+    @Default(false) bool isScraped,
+
+    /// Room-specific facilities
+    @Default([]) List<String> roomFacilities,
+
+    /// Shared facilities
+    @Default([]) List<String> sharedFacilities,
+
+    /// Source listing URL
+    @Default('') String listingUrl,
+
+    /// Last updated from backend
+    @Default(null) DateTime? updatedAt,
   }) = _KosDetail;
 }
 

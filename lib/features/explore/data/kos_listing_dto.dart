@@ -1,22 +1,49 @@
 import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
-
-class KosListingDto {
+import 'package:geolocator/geolocator.dart';class KosListingDto {
   const KosListingDto({
+    required this.id,
     required this.listingName,
     required this.price,
     required this.roomFacilities,
     required this.sharedFacilities,
     required this.listingUrl,
+    required this.imageUrl,
+    required this.description,
+    required this.source,
+    required this.address,
+    required this.latitude,
+    required this.longitude,
+    required this.isScraped,
+    required this.updatedAt,
   });
 
+  final String id;
   final String listingName;
   final int price;
   final List<String> roomFacilities;
   final List<String> sharedFacilities;
   final String listingUrl;
+  final String imageUrl;
+  final String description;
+  final String source;
+  final String address;
+  final double? latitude;
+  final double? longitude;
+  final bool isScraped;
+  final DateTime? updatedAt;
 
   factory KosListingDto.fromJson(Map<String, dynamic> json) {
+    // Parse coordinates
+    double? lat;
+    double? lng;
+    final coords = json['coordinates'];
+    if (coords is Map<String, dynamic>) {
+      lat = (coords['lat'] as num?)?.toDouble();
+      lng = (coords['lng'] as num?)?.toDouble();
+    }
+
     return KosListingDto(
+      id: json['id'] as String? ?? '',
       listingName: json['listing_name'] as String? ?? 'Listing Tidak Diketahui',
       price: (json['price'] as num?)?.toInt() ?? 0,
       roomFacilities: (json['room_facilities'] as List<dynamic>?)
@@ -28,34 +55,63 @@ class KosListingDto {
               .toList() ??
           [],
       listingUrl: json['listing_url'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      source: json['source'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      latitude: lat,
+      longitude: lng,
+      isScraped: json['is_scraped'] as bool? ?? false,
+      updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
     );
   }
 
-  KosListing toDomain(int index) {
-    final id = 'api-${listingUrl.hashCode.abs()}';
+  KosListing toDomain(int index, {double? userLat, double? userLng}) {
+    final domainId = id.isNotEmpty ? id : 'api-${listingUrl.hashCode.abs()}';
 
-    final location = _extractLocation(listingUrl);
+    final location =
+        address.isNotEmpty ? address : _extractLocation(listingUrl);
     final area = _extractArea(listingUrl);
 
     final allFacilities = [...roomFacilities, ...sharedFacilities];
-
     final facilityTags = allFacilities.take(4).toList();
 
+    // Use a short description snippet as AI summary for the card
+    final summarySnippet = description.length > 120
+        ? '${description.substring(0, 120)}...'
+        : description;
+
+    double calculatedDistance = -1.0;
+    if (userLat != null && userLng != null && latitude != null && longitude != null) {
+      final distMeters = Geolocator.distanceBetween(
+        userLat, userLng, latitude!, longitude!
+      );
+      calculatedDistance = distMeters / 1000.0;
+    }
+
     return KosListing(
-      id: id,
+      id: domainId,
       name: listingName,
       location: location,
       area: area,
       pricePerMonth: price,
-      imageUrl:
-          'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=300&fit=crop',
+      imageUrl: imageUrl,
       rating: 0.0,
       reviewCount: 0,
-      distanceKm: 0.0,
-      aiSummary: '',
+      distanceKm: calculatedDistance,
+      aiSummary: summarySnippet,
       facilities: allFacilities,
       facilityTags: facilityTags,
       listingUrl: listingUrl,
+      description: description,
+      source: source,
+      address: address,
+      latitude: latitude,
+      longitude: longitude,
+      isScraped: isScraped,
+      roomFacilities: roomFacilities,
+      sharedFacilities: sharedFacilities,
+      updatedAt: updatedAt,
     );
   }
 

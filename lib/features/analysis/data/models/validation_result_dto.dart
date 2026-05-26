@@ -149,14 +149,16 @@ class CommunicationAnalysisDto {
     if (botTestimonialDetected) {
       flags.add(const RedFlag(
         title: 'Testimoni Tidak Valid',
-        description: 'Testimoni terdeteksi tidak autentik atau menggunakan bot.',
+        description:
+            'Testimoni terdeteksi tidak autentik atau menggunakan bot.',
         icon: 'report',
       ));
     }
     if (inconsistenciesFound) {
       flags.add(const RedFlag(
         title: 'Inkonsistensi Data',
-        description: 'Ditemukan ketidaksesuaian dalam informasi yang diberikan.',
+        description:
+            'Ditemukan ketidaksesuaian dalam informasi yang diberikan.',
         icon: 'compare_arrows',
       ));
     }
@@ -186,13 +188,11 @@ class VisualAnalysisDto {
 
   factory VisualAnalysisDto.fromJson(Map<String, dynamic> json) {
     return VisualAnalysisDto(
-      roomInteriorDetected:
-          json['room_interior_detected'] as bool? ?? false,
+      roomInteriorDetected: json['room_interior_detected'] as bool? ?? false,
       watermarkDetected: json['watermark_detected'] as bool? ?? false,
       realisticImages: json['realistic_images'] as bool? ?? true,
       watermarkSource: json['watermark_source'] as String?,
-      metadataMatchRisk:
-          (json['metadata_match_risk'] as num?)?.toInt() ?? 0,
+      metadataMatchRisk: (json['metadata_match_risk'] as num?)?.toInt() ?? 0,
       metadataSummary: json['metadata_summary'] as String?,
       summary: json['summary'] as String? ?? '',
     );
@@ -232,6 +232,7 @@ class VisualAnalysisDto {
 /// DTO matching the top-level API `ValidationResult` schema.
 class ValidationResultDto {
   const ValidationResultDto({
+    this.recordId,
     required this.anomalyScore,
     required this.status,
     required this.detectedAnomalies,
@@ -242,6 +243,7 @@ class ValidationResultDto {
     required this.conclusionSummary,
   });
 
+  final String? recordId;
   final int anomalyScore;
   final String status;
   final List<DetectedAnomalyDto> detectedAnomalies;
@@ -253,17 +255,15 @@ class ValidationResultDto {
 
   factory ValidationResultDto.fromJson(Map<String, dynamic> json) {
     return ValidationResultDto(
+      recordId: json['record_id'] as String?,
       anomalyScore: (json['anomaly_score'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? '',
-      detectedAnomalies:
-          (json['detected_anomalies'] as List<dynamic>? ?? [])
-              .map((e) =>
-                  DetectedAnomalyDto.fromJson(e as Map<String, dynamic>))
-              .toList(),
-      recommendedActions:
-          (json['recommended_actions'] as List<dynamic>? ?? [])
-              .map((e) => e.toString())
-              .toList(),
+      detectedAnomalies: (json['detected_anomalies'] as List<dynamic>? ?? [])
+          .map((e) => DetectedAnomalyDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      recommendedActions: (json['recommended_actions'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
       priceComparison: PriceComparisonDto.fromJson(
           json['price_comparison'] as Map<String, dynamic>? ?? {}),
       communicationAnalysis: CommunicationAnalysisDto.fromJson(
@@ -276,8 +276,7 @@ class ValidationResultDto {
 
   /// Maps this full DTO to the [AnalysisResult] domain model.
   AnalysisResult toDomain() {
-    final anomalyFlags =
-        detectedAnomalies.map((a) => a.toDomain()).toList();
+    final anomalyFlags = detectedAnomalies.map((a) => a.toDomain()).toList();
     final commFlags = communicationAnalysis.toRedFlags();
     final visualFlags = visualAnalysis.toRedFlags();
 
@@ -300,6 +299,27 @@ class ValidationResultDto {
       recommendations: recommendedActions,
       areaComparison: priceComparison.toDomain(),
       chatTemplates: _buildChatTemplates(allFlags),
+      // Communication Analysis full data
+      communicationRiskScore: communicationAnalysis.aiRiskScore,
+      pressureLevel: communicationAnalysis.pressureLevel,
+      inconsistenciesFound: communicationAnalysis.inconsistenciesFound,
+      paymentAnomalyDetected: communicationAnalysis.paymentAnomalyDetected,
+      urgencyDetected: communicationAnalysis.urgencyDetected,
+      botTestimonialDetected: communicationAnalysis.botTestimonialDetected,
+      isCrossCheckFail: communicationAnalysis.isCrossCheckFail,
+      crossCheckDetails: communicationAnalysis.crossCheckDetails,
+      communicationSummary: communicationAnalysis.summary,
+      // Visual Analysis full data
+      roomInteriorDetected: visualAnalysis.roomInteriorDetected,
+      watermarkDetected: visualAnalysis.watermarkDetected,
+      watermarkSource: visualAnalysis.watermarkSource,
+      realisticImages: visualAnalysis.realisticImages,
+      metadataMatchRisk: visualAnalysis.metadataMatchRisk,
+      metadataSummary: visualAnalysis.metadataSummary,
+      visualSummary: visualAnalysis.summary,
+      // Metadata
+      recordId: recordId,
+      status: status,
     );
   }
 
@@ -347,14 +367,12 @@ class AIReviewSummaryDto {
   factory AIReviewSummaryDto.fromJson(Map<String, dynamic> json) {
     return AIReviewSummaryDto(
       shortSummary: json['short_summary'] as String? ?? '',
-      positiveHighlights:
-          (json['positive_highlights'] as List<dynamic>? ?? [])
-              .map((e) => e.toString())
-              .toList(),
-      negativeHighlights:
-          (json['negative_highlights'] as List<dynamic>? ?? [])
-              .map((e) => e.toString())
-              .toList(),
+      positiveHighlights: (json['positive_highlights'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
+      negativeHighlights: (json['negative_highlights'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList(),
       topicTags: (json['topic_tags'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
