@@ -26,9 +26,15 @@ class UserLocation extends _$UserLocation {
         return null;
       }
 
+      try {
+        final lastPosition = await Geolocator.getLastKnownPosition();
+        if (lastPosition != null) return lastPosition;
+      } catch (_) {}
+
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 5),
         ),
       );
     } catch (e) {

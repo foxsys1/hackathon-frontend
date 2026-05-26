@@ -15,6 +15,7 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
     required this.longitude,
     required this.isScraped,
     required this.updatedAt,
+    this.aiSummary,
   });
 
   final String id;
@@ -31,6 +32,7 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
   final double? longitude;
   final bool isScraped;
   final DateTime? updatedAt;
+  final String? aiSummary;
 
   factory KosListingDto.fromJson(Map<String, dynamic> json) {
     // Parse coordinates
@@ -63,6 +65,7 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
       longitude: lng,
       isScraped: json['is_scraped'] as bool? ?? false,
       updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+      aiSummary: json['ai_summary'] as String?,
     );
   }
 
@@ -76,10 +79,10 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
     final allFacilities = [...roomFacilities, ...sharedFacilities];
     final facilityTags = allFacilities.take(4).toList();
 
-    // Use a short description snippet as AI summary for the card
-    final summarySnippet = description.length > 120
+    // Use a short description snippet as AI summary for the card if API doesn't provide one
+    final summarySnippet = aiSummary ?? (description.length > 120
         ? '${description.substring(0, 120)}...'
-        : description;
+        : description);
 
     double calculatedDistance = -1.0;
     if (userLat != null && userLng != null && latitude != null && longitude != null) {

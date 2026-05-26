@@ -120,6 +120,18 @@ class ApiService {
     return response.data;
   }
 
+  /// Fetches reviews for a given kos from the backend.
+  Future<Map<String, dynamic>> getKosReviews(
+    String kosId, {
+    int limit = 10,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/reviews/$kosId',
+      queryParameters: {'limit': limit},
+    );
+    return response.data ?? {};
+  }
+
   Future<bool> healthCheck() async {
     try {
       final response = await _dio.get<dynamic>('/health');

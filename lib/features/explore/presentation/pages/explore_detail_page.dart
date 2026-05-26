@@ -84,7 +84,16 @@ class ExploreDetailPage extends ConsumerWidget {
                       formatPrice: _formatPrice,
                       formatDistance: _formatDistance,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
+
+                    // ── Open Listing URL Button ──
+                    if (detail.listingUrl.isNotEmpty) ...[
+                      _OpenListingButton(
+                        source: detail.source,
+                        listingUrl: detail.listingUrl,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     // ── Description Section ──
                     if (detail.description.isNotEmpty) ...[
@@ -102,14 +111,7 @@ class ExploreDetailPage extends ConsumerWidget {
                       const SizedBox(height: 20),
                     ],
 
-                    // ── Open Listing URL Button ──
-                    if (detail.listingUrl.isNotEmpty) ...[
-                      _OpenListingButton(
-                        source: detail.source,
-                        listingUrl: detail.listingUrl,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+
 
                     // ── Ringkasan AI Section ──
                     ref.watch(kosAiSummaryProvider(kosId)).when(
@@ -132,19 +134,11 @@ class ExploreDetailPage extends ConsumerWidget {
                         ),
                     const SizedBox(height: 20),
 
-                    // ── Topik yang sering dibahas ──
-                    _TopikDibahasSection(
-                      topics: ref
-                              .watch(kosAiSummaryProvider(kosId))
-                              .valueOrNull
-                              ?.topicTags ??
-                          detail.topikDibahas,
-                    ),
-                    const SizedBox(height: 20),
+
 
                     // ── Review Terbaru ──
                     _RecentReviewSection(
-                      detail: detail,
+                      kosId: kosId,
                       onSeeAll: () => context.push('/explore/$kosId/reviews'),
                     ),
                     const SizedBox(height: 16),
@@ -751,116 +745,74 @@ class _AiSummarySectionLoading extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════
-// Topik yang sering dibahas
-// ════════════════════════════════════════════════════════════════════
-
-class _TopikDibahasSection extends StatelessWidget {
-  const _TopikDibahasSection({required this.topics});
-  final List<String> topics;
-
-  @override
-  Widget build(BuildContext context) {
-    const maxVisible = 3;
-    final visible = topics.take(maxVisible).toList();
-    final overflow = topics.length - maxVisible;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.chat_bubble_outline,
-                  size: 18, color: AppColors.textPrimary),
-              SizedBox(width: 8),
-              Text(
-                'Topik yang sering dibahas',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ...visible.map((tag) => _FacilityChip(label: tag)),
-              if (overflow > 0)
-                _FacilityChip(
-                  label: '+$overflow Lainnya',
-                  isOverflow: true,
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ════════════════════════════════════════════════════════════════════
 // Recent Review Section
 // ════════════════════════════════════════════════════════════════════
 
-class _RecentReviewSection extends StatelessWidget {
+class _RecentReviewSection extends ConsumerWidget {
   const _RecentReviewSection({
-    required this.detail,
+    required this.kosId,
     required this.onSeeAll,
   });
 
-  final KosDetail detail;
+  final String kosId;
   final VoidCallback onSeeAll;
 
   @override
-  Widget build(BuildContext context) {
-    if (detail.reviews.isEmpty) return const SizedBox.shrink();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviewsAsync = ref.watch(kosReviewsProvider(kosId));
 
-    final latestReview = detail.reviews.first;
+    return reviewsAsync.when(
+      data: (reviews) {
+        if (reviews.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header
-          const Row(
+        final latestReview = reviews.first;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.star_outline, size: 18, color: AppColors.textPrimary),
-              SizedBox(width: 8),
-              Text(
-                'Review Terbaru',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
+              // Section header
+              const Row(
+                children: [
+                  Icon(Icons.star_outline, size: 18, color: AppColors.textPrimary),
+                  SizedBox(width: 8),
+                  Text(
+                    'Review Terbaru',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 14),
+
+              // Single review card preview
+              ReviewCard(review: latestReview),
             ],
           ),
-          const SizedBox(height: 14),
-
-          // Single review card preview
-          ReviewCard(review: latestReview),
-        ],
+        );
+      },
+      loading: () => Container(
+        padding: const EdgeInsets.all(16),
+        child: const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
       ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
@@ -1112,7 +1064,7 @@ class _OpenListingButton extends StatelessWidget {
     final label = source.isNotEmpty ? 'Buka di $source' : 'Buka Listing Asli';
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
+      child: ElevatedButton.icon(
         onPressed: () async {
           final uri = Uri.tryParse(listingUrl);
           if (uri != null) {
@@ -1121,9 +1073,9 @@ class _OpenListingButton extends StatelessWidget {
         },
         icon: const Icon(Icons.open_in_new, size: 18),
         label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 50),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),

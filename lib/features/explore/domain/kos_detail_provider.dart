@@ -54,9 +54,30 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
 
 /// Provides the full list of reviews for a given kos.
 @riverpod
-List<KosReview> kosReviews(KosReviewsRef ref, String kosId) {
-  final detail = mockKosDetails[kosId];
-  return detail?.reviews ?? [];
+Future<List<KosReview>> kosReviews(KosReviewsRef ref, String kosId) async {
+  if (mockKosDetails.containsKey(kosId)) {
+    return mockKosDetails[kosId]?.reviews ?? [];
+  }
+
+  final api = ref.read(apiServiceProvider);
+  try {
+    final response = await api.getKosReviews(kosId, limit: 50);
+    final reviewsData = response['reviews'] as List<dynamic>? ?? [];
+    return reviewsData.map((e) {
+      final item = e as Map<String, dynamic>;
+      return KosReview(
+        id: 'review-${item.hashCode}',
+        userName: item['name'] as String? ?? 'Pengguna',
+        userRole: 'Penghuni Kos',
+        rating: (item['rating'] as num?)?.toDouble() ?? 5.0,
+        timeAgo: item['date'] as String? ?? 'Baru saja',
+        content: item['content'] as String? ?? '',
+        tags: const [],
+      );
+    }).toList();
+  } catch (_) {
+    return [];
+  }
 }
 
 /// Fetches an AI-generated review summary from the backend for a given kos.
@@ -67,10 +88,14 @@ Future<AIReviewSummaryDto?> kosAiSummary(
   KosAiSummaryRef ref,
   String kosId,
 ) async {
-  final detail = ref.watch(kosDetailProvider(kosId));
-  if (detail == null || detail.reviews.isEmpty) return null;
+  List<KosReview> reviewList = [];
+  try {
+    reviewList = await ref.watch(kosReviewsProvider(kosId).future);
+  } catch (_) {}
 
-  final reviews = detail.reviews.map((r) => r.content).toList();
+  if (reviewList.isEmpty) return null;
+
+  final reviews = reviewList.map((r) => r.content).toList();
   try {
     final api = ref.read(apiServiceProvider);
     final raw = await api.getReviewSummary(reviews);

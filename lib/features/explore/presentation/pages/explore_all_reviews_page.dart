@@ -31,7 +31,8 @@ class _ExploreAllReviewsPageState extends ConsumerState<ExploreAllReviewsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final reviews = ref.watch(kosReviewsProvider(widget.kosId));
+    final reviewsAsync = ref.watch(kosReviewsProvider(widget.kosId));
+    final reviews = reviewsAsync.valueOrNull ?? [];
 
     // Apply filters
     var filtered = List<KosReview>.from(reviews);
@@ -176,33 +177,40 @@ class _ExploreAllReviewsPageState extends ConsumerState<ExploreAllReviewsPage> {
 
             // ── Review list ──
             Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.rate_review_outlined,
-                              size: 48,
-                              color: AppColors.textHint.withOpacity(0.5)),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Tidak ada review ditemukan.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+              child: reviewsAsync.isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                       ),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ReviewCard(review: filtered[i]),
-                      ),
-                    ),
+                  : filtered.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.rate_review_outlined,
+                                  size: 48,
+                                  color: AppColors.textHint.withOpacity(0.5)),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Tidak ada review ditemukan.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: ReviewCard(review: filtered[i]),
+                          ),
+                        ),
             ),
           ],
         ),
