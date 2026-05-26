@@ -9,7 +9,6 @@ import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/data/analysis_repository_impl.dart';
 import 'package:kos_gdgoc/features/analysis/data/models/validation_result_dto.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
-import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
 import 'package:kos_gdgoc/features/history/data/history_provider.dart';
 import 'package:kos_gdgoc/features/history/domain/history_record.dart';
 
@@ -99,22 +98,10 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
       final api = ref.read(apiServiceProvider);
       final repo = AnalysisRepositoryImpl(api);
 
-      // Run review-summary in parallel (optional — failure is non-critical).
-      final reviewTexts = ref.read(reviewTextsProvider);
-      final reviewFuture = reviewTexts.isNotEmpty
-          ? api
-              .getReviewSummary(reviewTexts)
-              .then<AIReviewSummaryDto?>(
-                (r) => AIReviewSummaryDto.fromJson(r),
-              )
-              .catchError((_) => null)
-          : Future<AIReviewSummaryDto?>.value(null);
-
       // Run API + minimum display time in parallel.
       final results = await Future.wait<dynamic>([
         repo.validateListing(analysisState),
         minDisplay,
-        reviewFuture,
       ]);
 
       if (!mounted || _cancelled) return;
@@ -128,14 +115,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
       });
 
       final raw = results[0] as Map<String, dynamic>;
-      final dto = ValidationResultDto.fromJson(raw);
-      final result = dto.toDomain();
+      final result = ValidationResultDto.fromJson(raw).toDomain();
       ref.read(analysisStateNotifierProvider.notifier).setResult(result);
-
-      final reviewSummary = results[2] as AIReviewSummaryDto?;
-      if (reviewSummary != null) {
-        ref.read(reviewSummaryProvider.notifier).set(reviewSummary);
-      }
 
       // Persist result to in-session history.
       final riskLevel = result.riskScore >= 70
@@ -143,11 +124,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
           : result.riskScore >= 40
               ? RiskLevel.sedang
               : RiskLevel.rendah;
-      // Use the backend-generated record_id when available so detail lookups work.
-      final recordId =
-          dto.recordId ?? DateTime.now().millisecondsSinceEpoch.toString();
       final historyRecord = HistoryRecord(
-        id: recordId,
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
         namaKos: analysisState.basicInfo.namaKos.isNotEmpty
             ? analysisState.basicInfo.namaKos
             : 'Kos Tidak Diketahui',

@@ -15,7 +15,7 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
     return mockKosDetails[kosId];
   }
 
-  // Attempt to build from live API listings.
+  // Attempt to build from live API listings (e.g. IDs prefixed with 'api-').
   final listings = ref.watch(apiKosListingsProvider).valueOrNull ?? [];
   try {
     final listing = listings.firstWhere((l) => l.id == kosId);
@@ -36,16 +36,6 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
       negativeHighlights: const [],
       topikDibahas: listing.facilityTags,
       reviews: const [],
-      description: listing.description,
-      source: listing.source,
-      address: listing.address,
-      latitude: listing.latitude,
-      longitude: listing.longitude,
-      isScraped: listing.isScraped,
-      roomFacilities: listing.roomFacilities,
-      sharedFacilities: listing.sharedFacilities,
-      listingUrl: listing.listingUrl,
-      updatedAt: listing.updatedAt,
     );
   } catch (_) {
     return null;

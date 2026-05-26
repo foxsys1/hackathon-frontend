@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
-import 'package:kos_gdgoc/features/explore/data/location_provider.dart';
 import 'package:kos_gdgoc/features/explore/domain/explore_filter_state.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/explore_filter_sheet.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/kos_card.dart';
@@ -15,7 +14,6 @@ class ExplorePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(exploreFilterNotifierProvider);
     final listings = ref.watch(filteredKosListingsProvider);
-    final apiAsync = ref.watch(apiKosListingsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -66,36 +64,45 @@ class ExplorePage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── API error indicator ──
-            if (apiAsync.hasError)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 0),
-                child: Container(
+            // ── API loading / error indicator ──
+            Builder(builder: (context) {
+              final apiAsync = ref.watch(apiKosListingsProvider);
+              return apiAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+                error: (_, __) => Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.wifi_off,
-                          size: 16, color: Color(0xFF92400E)),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Tidak bisa terhubung ke server. Menampilkan data lokal.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF92400E),
+                      horizontal: 20, vertical: 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.wifi_off,
+                            size: 16, color: Color(0xFF92400E)),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Tidak bisa terhubung ke server. Menampilkan data lokal.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF92400E),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
+                data: (_) => const SizedBox.shrink(),
+              );
+            }),
             const SizedBox(height: 12),
 
             // ── Search bar ──
@@ -108,18 +115,6 @@ class ExplorePage extends ConsumerWidget {
                 decoration: InputDecoration(
                   hintText: 'Cari nama kos, lokasi, atau sumber...',
                   prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      ref.watch(userLocationProvider).valueOrNull != null 
-                        ? Icons.location_off 
-                        : Icons.my_location, 
-                      color: AppColors.primary
-                    ),
-                    tooltip: 'Toggle Lokasi',
-                    onPressed: () {
-                      ref.read(userLocationProvider.notifier).toggleLocation();
-                    },
-                  ),
                   filled: true,
                   fillColor: Colors.white,
                   contentPadding: const EdgeInsets.symmetric(
@@ -212,62 +207,42 @@ class ExplorePage extends ConsumerWidget {
 
             // ── Listing cards ──
             Expanded(
-              child: apiAsync.isLoading
-                  ? const Center(
+              child: listings.isEmpty
+                  ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Memuat data kos...',
+                          Icon(Icons.search_off,
+                              size: 48,
+                              color: AppColors.textHint.withOpacity(0.5)),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Tidak ada kos ditemukan.',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
                             ),
                           ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Coba ubah filter pencarian.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textHint,
+                            ),
+                          ),
                         ],
                       ),
                     )
-                  : listings.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.search_off,
-                                  size: 48,
-                                  color: AppColors.textHint.withOpacity(0.5)),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Tidak ada kos ditemukan.',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Coba ubah filter pencarian.',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textHint,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: listings.length,
-                          itemBuilder: (context, i) => KosCard(
-                            listing: listings[i],
-                            onTap: () =>
-                                context.push('/explore/${listings[i].id}'),
-                          ),
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: listings.length,
+                      itemBuilder: (context, i) => KosCard(
+                          listing: listings[i],
+                          onTap: () =>
+                              context.push('/explore/${listings[i].id}'),
                         ),
+                    ),
             ),
           ],
         ),

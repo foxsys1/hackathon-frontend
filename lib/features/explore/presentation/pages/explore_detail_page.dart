@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_detail.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_detail_provider.dart';
@@ -86,58 +84,29 @@ class ExploreDetailPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Description Section ──
-                    if (detail.description.isNotEmpty) ...[
-                      _DescriptionSection(description: detail.description),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // ── Fasilitas Section ──
-                    if (detail.roomFacilities.isNotEmpty ||
-                        detail.sharedFacilities.isNotEmpty) ...[
-                      _FacilitiesSection(
-                        roomFacilities: detail.roomFacilities,
-                        sharedFacilities: detail.sharedFacilities,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // ── Open Listing URL Button ──
-                    if (detail.listingUrl.isNotEmpty) ...[
-                      _OpenListingButton(
-                        source: detail.source,
-                        listingUrl: detail.listingUrl,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
                     // ── Ringkasan AI Section ──
                     ref.watch(kosAiSummaryProvider(kosId)).when(
-                          data: (summary) {
-                            return _AiSummarySection(
-                              detail: detail,
-                              aiSummary: summary?.shortSummary,
-                              positives: summary?.positiveHighlights,
-                              negatives: summary?.negativeHighlights,
-                              isLive: summary != null,
-                            );
-                          },
-                          loading: () => const _AiSummarySectionLoading(),
-                          error: (err, stack) => _AiSummarySection(
-                            detail: detail,
-                            isLive: false,
-                            warningMessage:
-                                'Gagal memuat ringkasan live AI. Menampilkan data lokal.',
-                          ),
-                        ),
+                      data: (summary) {
+                        return _AiSummarySection(
+                          detail: detail,
+                          aiSummary: summary?.shortSummary,
+                          positives: summary?.positiveHighlights,
+                          negatives: summary?.negativeHighlights,
+                          isLive: summary != null,
+                        );
+                      },
+                      loading: () => const _AiSummarySectionLoading(),
+                      error: (err, stack) => _AiSummarySection(
+                        detail: detail,
+                        isLive: false,
+                        warningMessage: 'Gagal memuat ringkasan live AI. Menampilkan data lokal.',
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
                     // ── Topik yang sering dibahas ──
                     _TopikDibahasSection(
-                      topics: ref
-                              .watch(kosAiSummaryProvider(kosId))
-                              .valueOrNull
-                              ?.topicTags ??
+                      topics: ref.watch(kosAiSummaryProvider(kosId)).valueOrNull?.topicTags ??
                           detail.topikDibahas,
                     ),
                     const SizedBox(height: 20),
@@ -195,8 +164,6 @@ class ExploreDetailPage extends ConsumerWidget {
 // Kos Info Header
 // ════════════════════════════════════════════════════════════════════
 
-const _corsProxy = 'https://cors-proxy-two-gules.vercel.app/?url=';
-
 class _KosInfoHeader extends StatelessWidget {
   const _KosInfoHeader({
     required this.detail,
@@ -207,13 +174,6 @@ class _KosInfoHeader extends StatelessWidget {
   final KosDetail detail;
   final String Function(int) formatPrice;
   final String Function(double) formatDistance;
-
-  /// Routes the image URL through the CORS proxy on Flutter Web.
-  String _resolveImageUrl(String url) {
-    if (url.isEmpty) return url;
-    if (kIsWeb) return '$_corsProxy${Uri.encodeComponent(url)}';
-    return url;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +201,7 @@ class _KosInfoHeader extends StatelessWidget {
                   width: 80,
                   height: 80,
                   child: Image.network(
-                    _resolveImageUrl(detail.imageUrl),
+                    detail.imageUrl,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
                       color: AppColors.chipGray,
@@ -275,24 +235,23 @@ class _KosInfoHeader extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        if (detail.distanceKm >= 0)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.location_on,
-                                  size: 12,
-                                  color: AppColors.primary.withOpacity(0.7)),
-                              const SizedBox(width: 2),
-                              Text(
-                                formatDistance(detail.distanceKm),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary.withOpacity(0.8),
-                                ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 12,
+                                color: AppColors.primary.withOpacity(0.7)),
+                            const SizedBox(width: 2),
+                            Text(
+                              formatDistance(detail.distanceKm),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary.withOpacity(0.8),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -356,34 +315,6 @@ class _KosInfoHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          // Source badge
-          if (detail.source.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.source_outlined,
-                      size: 13, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEF2FF),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      detail.source,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF4F46E5),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           // Facility chips
           Wrap(
             spacing: 6,
@@ -463,8 +394,7 @@ class _AiSummarySection extends StatelessWidget {
               if (isLive) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEF2FF),
                     borderRadius: BorderRadius.circular(6),
@@ -494,8 +424,7 @@ class _AiSummarySection extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline,
-                      size: 14, color: Color(0xFFB45309)),
+                  const Icon(Icons.info_outline, size: 14, color: Color(0xFFB45309)),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -860,279 +789,6 @@ class _RecentReviewSection extends StatelessWidget {
           // Single review card preview
           ReviewCard(review: latestReview),
         ],
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Description Section
-// ════════════════════════════════════════════════════════════════════
-
-class _DescriptionSection extends StatefulWidget {
-  const _DescriptionSection({required this.description});
-  final String description;
-
-  @override
-  State<_DescriptionSection> createState() => _DescriptionSectionState();
-}
-
-class _DescriptionSectionState extends State<_DescriptionSection> {
-  bool _expanded = false;
-  static const _maxChars = 200;
-
-  @override
-  Widget build(BuildContext context) {
-    final isLong = widget.description.length > _maxChars;
-    final displayText = _expanded || !isLong
-        ? widget.description
-        : '${widget.description.substring(0, _maxChars)}...';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.description_outlined,
-                  size: 18, color: AppColors.textPrimary),
-              SizedBox(width: 8),
-              Text(
-                'Deskripsi',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            displayText,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              height: 1.6,
-            ),
-          ),
-          if (isLong) ...[
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () => setState(() => _expanded = !_expanded),
-              child: Text(
-                _expanded ? 'Tampilkan lebih sedikit' : 'Baca selengkapnya',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Facilities Section
-// ════════════════════════════════════════════════════════════════════
-
-class _FacilitiesSection extends StatelessWidget {
-  const _FacilitiesSection({
-    required this.roomFacilities,
-    required this.sharedFacilities,
-  });
-
-  final List<String> roomFacilities;
-  final List<String> sharedFacilities;
-
-  static const _facilityIcons = <String, IconData>{
-    'AC': Icons.ac_unit,
-    'Kasur': Icons.bed_outlined,
-    'Lemari': Icons.door_sliding_outlined,
-    'Meja': Icons.table_restaurant_outlined,
-    'Kursi': Icons.chair_outlined,
-    'K. Mandi Dalam': Icons.shower_outlined,
-    'K. Mandi Luar': Icons.bathroom_outlined,
-    'Air panas': Icons.local_fire_department_outlined,
-    'WiFi': Icons.wifi,
-    'Parkir': Icons.local_parking_outlined,
-    'Dapur': Icons.kitchen_outlined,
-    'CCTV': Icons.videocam_outlined,
-    'Laundry': Icons.local_laundry_service_outlined,
-    'Kulkas': Icons.kitchen,
-    'TV': Icons.tv_outlined,
-  };
-
-  Widget _chip(String label) {
-    final icon = _facilityIcons[label] ?? Icons.check_circle_outline;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.chipGray,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.primary),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.home_outlined, size: 18, color: AppColors.textPrimary),
-              SizedBox(width: 8),
-              Text(
-                'Fasilitas',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          if (roomFacilities.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Fasilitas Kamar',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: roomFacilities.map(_chip).toList(),
-            ),
-          ],
-          if (sharedFacilities.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Fasilitas Bersama',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: sharedFacilities.map(_chip).toList(),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Open Listing URL Button
-// ════════════════════════════════════════════════════════════════════
-
-class _OpenListingButton extends StatelessWidget {
-  const _OpenListingButton({
-    required this.source,
-    required this.listingUrl,
-  });
-
-  final String source;
-  final String listingUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = source.isNotEmpty ? 'Buka di $source' : 'Buka Listing Asli';
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () async {
-          final uri = Uri.tryParse(listingUrl);
-          if (uri != null) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        },
-        icon: const Icon(Icons.open_in_new, size: 18),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          side: const BorderSide(color: AppColors.primary),
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
     );
   }

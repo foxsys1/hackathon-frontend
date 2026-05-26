@@ -96,30 +96,6 @@ class ApiService {
     return response.data ?? {};
   }
 
-  /// Fetches the validation history list for a given device.
-  Future<List<Map<String, dynamic>>> getHistory(
-    String deviceId, {
-    int limit = 20,
-  }) async {
-    final response = await _dio.get<dynamic>(
-      '/api/v1/history',
-      queryParameters: {'device_id': deviceId, 'limit': limit},
-    );
-    final data = response.data;
-    if (data is List) {
-      return data.whereType<Map<String, dynamic>>().toList();
-    }
-    return [];
-  }
-
-  /// Fetches a single saved validation record by its Firestore document ID.
-  Future<Map<String, dynamic>?> getHistoryRecord(String recordId) async {
-    final response = await _dio.get<Map<String, dynamic>>(
-      '/api/v1/history/$recordId',
-    );
-    return response.data;
-  }
-
   Future<bool> healthCheck() async {
     try {
       final response = await _dio.get<dynamic>('/health');
