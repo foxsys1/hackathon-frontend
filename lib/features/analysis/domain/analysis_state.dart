@@ -4,7 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'analysis_state.freezed.dart';
 part 'analysis_state.g.dart';
 
-
 @freezed
 class BasicInfo with _$BasicInfo {
   const factory BasicInfo({
@@ -17,7 +16,6 @@ class BasicInfo with _$BasicInfo {
     @Default([]) List<String> fasilitas,
   }) = _BasicInfo;
 }
-
 
 /// Tri-state answer: yes / no / tidakTahu (don't know)
 enum TriAnswer { ya, tidak, tidakTahu }
@@ -55,7 +53,6 @@ class QuickCheck with _$QuickCheck {
   }) = _QuickCheck;
 }
 
-
 @freezed
 class DeepCheck with _$DeepCheck {
   const factory DeepCheck({
@@ -63,7 +60,6 @@ class DeepCheck with _$DeepCheck {
     @Default([]) List<String> testimoniScreenshotPaths,
   }) = _DeepCheck;
 }
-
 
 @freezed
 class RedFlag with _$RedFlag {
@@ -105,9 +101,24 @@ class AnalysisResult with _$AnalysisResult {
     @Default([]) List<String> recommendations,
     @Default(null) AreaComparison? areaComparison,
     @Default([]) List<ChatTemplate> chatTemplates,
+    @Default('') String communicationSummary,
+    @Default(0) int communicationRiskScore,
+    @Default(0) int pressureLevel,
+    @Default(false) bool inconsistenciesFound,
+    @Default(false) bool paymentAnomalyDetected,
+    @Default(false) bool urgencyDetected,
+    @Default(false) bool botTestimonialDetected,
+    @Default(false) bool isCrossCheckFail,
+    @Default(null) String? crossCheckDetails,
+    @Default('') String visualSummary,
+    @Default(false) bool roomInteriorDetected,
+    @Default(false) bool realisticImages,
+    @Default(false) bool watermarkDetected,
+    @Default(null) String? watermarkSource,
+    @Default(0) int metadataMatchRisk,
+    @Default(null) String? metadataSummary,
   }) = _AnalysisResult;
 }
-
 
 @freezed
 class AnalysisState with _$AnalysisState {
@@ -120,7 +131,6 @@ class AnalysisState with _$AnalysisState {
     @Default(null) String? errorMessage,
   }) = _AnalysisState;
 }
-
 
 @Riverpod(keepAlive: true)
 class AnalysisStateNotifier extends _$AnalysisStateNotifier {
@@ -136,8 +146,7 @@ class AnalysisStateNotifier extends _$AnalysisStateNotifier {
       state = state.copyWith(quickCheck: qc);
 
   // ── Deep Check ──
-  void updateDeepCheck(DeepCheck dc) =>
-      state = state.copyWith(deepCheck: dc);
+  void updateDeepCheck(DeepCheck dc) => state = state.copyWith(deepCheck: dc);
 
   void addWhatsappChat(String path) => state = state.copyWith(
         deepCheck: state.deepCheck.copyWith(
@@ -147,8 +156,9 @@ class AnalysisStateNotifier extends _$AnalysisStateNotifier {
 
   void removeWhatsappChat(String path) => state = state.copyWith(
         deepCheck: state.deepCheck.copyWith(
-          whatsappChatPaths:
-              state.deepCheck.whatsappChatPaths.where((p) => p != path).toList(),
+          whatsappChatPaths: state.deepCheck.whatsappChatPaths
+              .where((p) => p != path)
+              .toList(),
         ),
       );
 
@@ -170,8 +180,8 @@ class AnalysisStateNotifier extends _$AnalysisStateNotifier {
       );
 
   // ── Result ──
-  void setResult(AnalysisResult result) =>
-      state = state.copyWith(result: result, isLoading: false, errorMessage: null);
+  void setResult(AnalysisResult result) => state =
+      state.copyWith(result: result, isLoading: false, errorMessage: null);
 
   void reset() => state = const AnalysisState();
 
@@ -182,6 +192,5 @@ class AnalysisStateNotifier extends _$AnalysisStateNotifier {
   void setError(String error) =>
       state = state.copyWith(isLoading: false, errorMessage: error);
 
-  void clearError() =>
-      state = state.copyWith(errorMessage: null);
+  void clearError() => state = state.copyWith(errorMessage: null);
 }
