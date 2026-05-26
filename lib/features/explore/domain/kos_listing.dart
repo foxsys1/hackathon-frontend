@@ -50,6 +50,9 @@ class KosListing with _$KosListing {
     /// Data source, e.g. "Mamikos"
     @Default('') String source,
 
+    /// The original source ID from the scraping/API
+    @Default('') String sourceId,
+
     /// Street address (may be empty)
     @Default('') String address,
 

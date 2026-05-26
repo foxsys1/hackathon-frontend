@@ -15,10 +15,12 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
     required this.longitude,
     required this.isScraped,
     required this.updatedAt,
+    this.sourceId,
     this.aiSummary,
   });
 
   final String id;
+  final String? sourceId;
   final String listingName;
   final int price;
   final List<String> roomFacilities;
@@ -65,6 +67,7 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
       longitude: lng,
       isScraped: json['is_scraped'] as bool? ?? false,
       updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+      sourceId: json['source_id'] as String?,
       aiSummary: json['ai_summary'] as String?,
     );
   }
@@ -108,6 +111,7 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
       listingUrl: listingUrl,
       description: description,
       source: source,
+      sourceId: sourceId ?? '',
       address: address,
       latitude: latitude,
       longitude: longitude,

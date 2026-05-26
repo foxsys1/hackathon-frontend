@@ -111,8 +111,6 @@ class ExploreDetailPage extends ConsumerWidget {
                       const SizedBox(height: 20),
                     ],
 
-
-
                     // ── Ringkasan AI Section ──
                     ref.watch(kosAiSummaryProvider(kosId)).when(
                           data: (summary) {
@@ -133,8 +131,6 @@ class ExploreDetailPage extends ConsumerWidget {
                           ),
                         ),
                     const SizedBox(height: 20),
-
-
 
                     // ── Review Terbaru ──
                     _RecentReviewSection(
@@ -319,31 +315,33 @@ class _KosInfoHeader extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // Rating
-                    Row(
-                      children: [
-                        const Icon(Icons.star,
-                            size: 14, color: Color(0xFFF59E0B)),
-                        const SizedBox(width: 3),
-                        Text(
-                          detail.rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                    if (detail.rating > 0) ...[
+                      const SizedBox(height: 4),
+                      // Rating
+                      Row(
+                        children: [
+                          const Icon(Icons.star,
+                              size: 14, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 3),
+                          Text(
+                            detail.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '(${detail.reviewCount} review)',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${detail.reviewCount} review)',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -360,8 +358,8 @@ class _KosInfoHeader extends StatelessWidget {
                       size: 13, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEEF2FF),
                       borderRadius: BorderRadius.circular(6),
@@ -745,7 +743,6 @@ class _AiSummarySectionLoading extends StatelessWidget {
   }
 }
 
-
 // ════════════════════════════════════════════════════════════════════
 // Recent Review Section
 // ════════════════════════════════════════════════════════════════════
@@ -783,7 +780,8 @@ class _RecentReviewSection extends ConsumerWidget {
               // Section header
               const Row(
                 children: [
-                  Icon(Icons.star_outline, size: 18, color: AppColors.textPrimary),
+                  Icon(Icons.star_outline,
+                      size: 18, color: AppColors.textPrimary),
                   SizedBox(width: 8),
                   Text(
                     'Review Terbaru',
@@ -1189,6 +1187,44 @@ class ReviewCard extends StatelessWidget {
               height: 1.5,
             ),
           ),
+
+          // Review photos – horizontal strip (Fix #4)
+          if (review.photos.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 90,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: review.photos.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final photo = review.photos[i];
+                  final url = photo.medium.isNotEmpty
+                      ? photo.medium
+                      : photo.small.isNotEmpty
+                          ? photo.small
+                          : photo.large;
+                  if (url.isEmpty) return const SizedBox.shrink();
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.network(
+                      url,
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 90,
+                        height: 90,
+                        color: AppColors.chipGray,
+                        child: const Icon(Icons.broken_image_outlined,
+                            color: AppColors.iconDefault, size: 28),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
 
           // Tags

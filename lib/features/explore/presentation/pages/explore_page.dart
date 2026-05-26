@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,14 +10,72 @@ import 'package:kos_gdgoc/features/explore/domain/explore_filter_state.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/explore_filter_sheet.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/kos_card.dart';
 
-class ExplorePage extends ConsumerWidget {
+class ExplorePage extends ConsumerStatefulWidget {
   const ExplorePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExplorePage> createState() => _ExplorePageState();
+}
+
+class _ExplorePageState extends ConsumerState<ExplorePage> {
+  final _scrollController = ScrollController();
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _searchCtrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  /// When the user scrolls within 300 px of the bottom, reveal the next item.
+  void _onScroll() {
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      ref.read(exploreListingsProvider.notifier).loadMore();
+    }
+  }
+
+  /// Debounce search: update local text filter immediately, then trigger
+  /// an API area-search after 800 ms of silence.
+  void _onSearchChanged(String value) {
+    // Instant local filter by name / location
+    ref
+        .read(exploreFilterNotifierProvider.notifier)
+        .setSearchQuery(value);
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 800), () {
+      if (value.trim().length >= 3) {
+        ref.read(exploreListingsProvider.notifier).searchArea(value.trim());
+      } else if (value.trim().isEmpty) {
+        // Restore default area when search is cleared
+        ref.read(exploreListingsProvider.notifier).searchArea('UGM Yogyakarta');
+      }
+    });
+  }
+
+  void _onSearchSubmit(String value) {
+    _debounce?.cancel();
+    if (value.trim().isNotEmpty) {
+      ref.read(exploreListingsProvider.notifier).searchArea(value.trim());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final filter = ref.watch(exploreFilterNotifierProvider);
     final listings = ref.watch(filteredKosListingsProvider);
-    final apiAsync = ref.watch(apiKosListingsProvider);
+    final exploreState = ref.watch(exploreListingsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -43,7 +103,7 @@ class ExplorePage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Temukan kos dan lihat ringkasan kos otomatis.',
+                          exploreState.currentArea,
                           style: TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary.withOpacity(0.8),
@@ -66,8 +126,8 @@ class ExplorePage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── API error indicator ──
-            if (apiAsync.hasError)
+            // ── Error indicator ──
+            if (exploreState.hasError)
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 20, vertical: 0),
@@ -85,7 +145,7 @@ class ExplorePage extends ConsumerWidget {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Tidak bisa terhubung ke server. Menampilkan data lokal.',
+                          'Tidak bisa terhubung ke server. Periksa koneksi internet Anda.',
                           style: TextStyle(
                             fontSize: 12,
                             color: Color(0xFF92400E),
@@ -102,23 +162,42 @@ class ExplorePage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: TextField(
-                onChanged: (v) => ref
-                    .read(exploreFilterNotifierProvider.notifier)
-                    .setSearchQuery(v),
+                controller: _searchCtrl,
+                onChanged: _onSearchChanged,
+                onSubmitted: _onSearchSubmit,
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
-                  hintText: 'Cari nama kos, lokasi, atau sumber...',
+                  hintText: 'Cari lokasi, nama kos, atau area...',
                   prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      ref.watch(userLocationProvider).valueOrNull != null 
-                        ? Icons.location_off 
-                        : Icons.my_location, 
-                      color: AppColors.primary
-                    ),
-                    tooltip: 'Toggle Lokasi',
-                    onPressed: () {
-                      ref.read(userLocationProvider.notifier).toggleLocation();
-                    },
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_searchCtrl.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          color: AppColors.textSecondary,
+                          tooltip: 'Hapus pencarian',
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            _onSearchChanged('');
+                          },
+                        ),
+                      IconButton(
+                        icon: Icon(
+                          ref.watch(userLocationProvider).valueOrNull != null
+                              ? Icons.location_off
+                              : Icons.my_location,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                        tooltip: 'Toggle Lokasi',
+                        onPressed: () {
+                          ref
+                              .read(userLocationProvider.notifier)
+                              .toggleLocation();
+                        },
+                      ),
+                    ],
                   ),
                   filled: true,
                   fillColor: Colors.white,
@@ -186,7 +265,8 @@ class ExplorePage extends ConsumerWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(icon, size: 14,
+                          Icon(icon,
+                              size: 14,
                               color: isSelected
                                   ? Colors.white
                                   : AppColors.textSecondary),
@@ -212,7 +292,7 @@ class ExplorePage extends ConsumerWidget {
 
             // ── Listing cards ──
             Expanded(
-              child: apiAsync.isLoading
+              child: exploreState.isLoadingInitial && listings.isEmpty
                   ? const Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -223,7 +303,7 @@ class ExplorePage extends ConsumerWidget {
                           ),
                           SizedBox(height: 16),
                           Text(
-                            'Memuat data kos...',
+                            'Mencari kos terbaik...',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -239,7 +319,8 @@ class ExplorePage extends ConsumerWidget {
                             children: [
                               Icon(Icons.search_off,
                                   size: 48,
-                                  color: AppColors.textHint.withOpacity(0.5)),
+                                  color:
+                                      AppColors.textHint.withOpacity(0.5)),
                               const SizedBox(height: 12),
                               const Text(
                                 'Tidak ada kos ditemukan.',
@@ -250,7 +331,7 @@ class ExplorePage extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Coba ubah filter pencarian.',
+                                'Coba ubah filter atau area pencarian.',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textHint,
@@ -260,13 +341,56 @@ class ExplorePage extends ConsumerWidget {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: listings.length,
-                          itemBuilder: (context, i) => KosCard(
-                            listing: listings[i],
-                            onTap: () =>
-                                context.push('/explore/${listings[i].id}'),
-                          ),
+                          controller: _scrollController,
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 20),
+                          // +1 for the bottom loader
+                          itemCount: listings.length +
+                              (exploreState.isLoadingMore ||
+                                      exploreState.hasMore
+                                  ? 1
+                                  : 0),
+                          itemBuilder: (context, i) {
+                            // Bottom loader / "load next" trigger
+                            if (i == listings.length) {
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                child: Center(
+                                  child: exploreState.isLoadingMore
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    AppColors.primary),
+                                          ),
+                                        )
+                                      : TextButton.icon(
+                                          onPressed: () => ref
+                                              .read(exploreListingsProvider
+                                                  .notifier)
+                                              .loadMore(),
+                                          icon: const Icon(
+                                              Icons.expand_more,
+                                              size: 18),
+                                          label:
+                                              const Text('Muat lebih banyak'),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: AppColors.primary,
+                                          ),
+                                        ),
+                                ),
+                              );
+                            }
+                            return KosCard(
+                              listing: listings[i],
+                              onTap: () => context
+                                  .push('/explore/${listings[i].id}'),
+                            );
+                          },
                         ),
             ),
           ],

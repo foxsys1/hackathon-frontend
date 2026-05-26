@@ -8,6 +8,7 @@ class HistoryListItemDto {
     required this.areaName,
     required this.price,
     required this.anomalyScore,
+    required this.confidenceScore,
     required this.status,
     required this.conclusionSummary,
     this.imageUrl,
@@ -19,6 +20,7 @@ class HistoryListItemDto {
   final String areaName;
   final double price;
   final int anomalyScore;
+  final int confidenceScore;
   final String status;
   final String conclusionSummary;
   final String? imageUrl;
@@ -31,6 +33,7 @@ class HistoryListItemDto {
       areaName: json['area_name'] as String? ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0,
       anomalyScore: (json['anomaly_score'] as num?)?.toInt() ?? 0,
+      confidenceScore: (json['confidence_score'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? '',
       conclusionSummary: json['conclusion_summary'] as String? ?? '',
       imageUrl: json['image_url'] as String?,
@@ -46,19 +49,26 @@ class HistoryListItemDto {
             ? RiskLevel.sedang
             : RiskLevel.rendah;
 
+    final confidence = (confidenceScore / 100.0).clamp(0.0, 1.0);
+    final confidenceHint = confidence >= 0.8
+        ? 'Data lengkap, analisis akurat.'
+        : confidence >= 0.6
+            ? 'Data cukup lengkap untuk analisis.'
+            : 'Lengkapi data untuk meningkatkan akurasi analisis.';
+
     return HistoryRecord(
       id: id,
       namaKos: listingName,
       lokasi: areaName,
       hargaPerBulan:
           price > 0 ? 'Rp ${_formatPrice(price.toInt())} / bulan' : '-',
-      sumberListing: '',
+      sumberListing: status,
       imageUrl: imageUrl ?? '',
       riskScore: anomalyScore,
       riskLevel: riskLevel,
       analysisDate: createdAt,
-      confidenceScore: 0,
-      confidenceHint: '',
+      confidenceScore: confidence,
+      confidenceHint: confidenceHint,
       riskDescription: conclusionSummary,
       redFlags: const [],
       recommendations: const [],

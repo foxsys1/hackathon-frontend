@@ -16,9 +16,15 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
   }
 
   // Attempt to build from live API listings.
-  final listings = ref.watch(apiKosListingsProvider).valueOrNull ?? [];
+  final listings = ref.watch(exploreListingsProvider).items;
   try {
     final listing = listings.firstWhere((l) => l.id == kosId);
+
+    // Pull in live rating / reviewCount if already fetched.
+    final ratingData = ref.watch(kosRatingProvider(kosId)).valueOrNull;
+    final liveRating = ratingData?.$1 ?? listing.rating;
+    final liveReviewCount = ratingData?.$2 ?? listing.reviewCount;
+
     return KosDetail(
       id: listing.id,
       name: listing.name,
@@ -26,8 +32,8 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
       area: listing.area,
       pricePerMonth: listing.pricePerMonth,
       imageUrl: listing.imageUrl,
-      rating: listing.rating,
-      reviewCount: listing.reviewCount,
+      rating: liveRating,
+      reviewCount: liveReviewCount,
       distanceKm: listing.distanceKm,
       facilities: listing.facilities,
       facilityTags: listing.facilityTags,
@@ -38,6 +44,7 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
       reviews: const [],
       description: listing.description,
       source: listing.source,
+      sourceId: listing.sourceId,
       address: listing.address,
       latitude: listing.latitude,
       longitude: listing.longitude,
@@ -52,6 +59,31 @@ KosDetail? kosDetail(KosDetailRef ref, String kosId) {
   }
 }
 
+/// Fetches the overall_rating and total_reviews for a kos from the reviews API.
+/// Returns a tuple (overallRating, totalReviews) or null on failure.
+@riverpod
+Future<(double, int)?> kosRating(
+  KosRatingRef ref,
+  String kosId,
+) async {
+  if (mockKosDetails.containsKey(kosId)) return null;
+
+  final api = ref.read(apiServiceProvider);
+  try {
+    final detail = ref.read(kosDetailProvider(kosId));
+    final fetchId =
+        (detail?.sourceId.isNotEmpty == true) ? detail!.sourceId : kosId;
+    final response = await api.getKosReviews(fetchId, limit: 1);
+    final ratingStr = response['overall_rating'] as String?;
+    final totalReviews = (response['total_reviews'] as num?)?.toInt() ?? 0;
+    final rating = double.tryParse(ratingStr ?? '') ?? 0.0;
+    if (rating == 0.0 && totalReviews == 0) return null;
+    return (rating, totalReviews);
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Provides the full list of reviews for a given kos.
 @riverpod
 Future<List<KosReview>> kosReviews(KosReviewsRef ref, String kosId) async {
@@ -61,10 +93,22 @@ Future<List<KosReview>> kosReviews(KosReviewsRef ref, String kosId) async {
 
   final api = ref.read(apiServiceProvider);
   try {
-    final response = await api.getKosReviews(kosId, limit: 50);
+    final detail = ref.read(kosDetailProvider(kosId));
+    final fetchId = (detail?.sourceId.isNotEmpty == true) ? detail!.sourceId : kosId;
+    final response = await api.getKosReviews(fetchId, limit: 50);
     final reviewsData = response['reviews'] as List<dynamic>? ?? [];
     return reviewsData.map((e) {
       final item = e as Map<String, dynamic>;
+      // Parse photo list from API
+      final photosRaw = item['photos'] as List<dynamic>? ?? [];
+      final photos = photosRaw.map((p) {
+        final pm = p as Map<String, dynamic>;
+        return ReviewPhoto(
+          small: pm['small'] as String? ?? '',
+          medium: pm['medium'] as String? ?? '',
+          large: pm['large'] as String? ?? '',
+        );
+      }).toList();
       return KosReview(
         id: 'review-${item.hashCode}',
         userName: item['name'] as String? ?? 'Pengguna',
@@ -73,6 +117,7 @@ Future<List<KosReview>> kosReviews(KosReviewsRef ref, String kosId) async {
         timeAgo: item['date'] as String? ?? 'Baru saja',
         content: item['content'] as String? ?? '',
         tags: const [],
+        photos: photos,
       );
     }).toList();
   } catch (_) {

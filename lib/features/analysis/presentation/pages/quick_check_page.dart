@@ -199,7 +199,7 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                         TextField(
                           controller: _mapsCtrl,
                           decoration: const InputDecoration(
-                            hintText: 'Contoh: https://maps.app.goo.gl/',
+                            hintText: 'Contoh: https://maps.app.goo.gl/xyzABC',
                             prefixIcon: Icon(Icons.location_on_outlined, size: 18),
                           ),
                         ),
@@ -227,7 +227,10 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                           const SizedBox(height: 8),
                           TextField(
                             controller: _kontakCtrl,
-                            decoration: const InputDecoration(hintText: 'Hendrik'),
+                            decoration: const InputDecoration(
+                              hintText: 'Contoh: Budi Santoso',
+                              prefixIcon: Icon(Icons.person_outline, size: 18),
+                            ),
                           ),
                         ],
                       ],
@@ -250,12 +253,13 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                         ),
                         if (_qc.knowsAccountName == TriAnswer.ya) ...[
                           const SizedBox(height: 12),
-                          _subLabel('Nama Rekening'),
+                          _subLabel('Nama di Rekening Bank'),
                           const SizedBox(height: 8),
                           TextField(
                             controller: _rekeningCtrl,
                             decoration: const InputDecoration(
-                              hintText: 'Contoh: https://maps.app.goo.gl/',
+                              hintText: 'Contoh: Siti Rahayu',
+                              prefixIcon: Icon(Icons.account_balance_outlined, size: 18),
                             ),
                           ),
                         ],
@@ -332,13 +336,21 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                           onPressed: _goDeepCheck,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 52),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text('Lanjutkan dengan Deep Check'),
+                              Icon(Icons.manage_search, size: 18),
                               SizedBox(width: 8),
-                              Icon(Icons.search, size: 18),
+                              Text(
+                                'Lanjutkan dengan Deep Check',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                             ],
                           ),
                         ),

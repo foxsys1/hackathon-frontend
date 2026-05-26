@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
-import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
+
 import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_bar.dart';
 
 class DeepCheckPage extends ConsumerStatefulWidget {
@@ -19,7 +19,6 @@ class DeepCheckPage extends ConsumerStatefulWidget {
 
 class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
   late DeepCheck _dc;
-  late final TextEditingController _reviewCtrl;
   final _picker = ImagePicker();
   bool _waExportExpanded = false;
 
@@ -27,12 +26,10 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
   void initState() {
     super.initState();
     _dc = ref.read(analysisStateNotifierProvider).deepCheck;
-    _reviewCtrl = TextEditingController();
   }
 
   @override
   void dispose() {
-    _reviewCtrl.dispose();
     super.dispose();
   }
 
@@ -269,113 +266,7 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Section 3 — Review teks
-                  _SectionCard(
-                    number: 3,
-                    title: 'Review dari Penghuni Lain',
-                    subtitle:
-                        'Tempel teks review dari platform (Mamikos, Google, dll.) untuk dianalisis AI.',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _reviewCtrl,
-                                minLines: 2,
-                                maxLines: 4,
-                                style: const TextStyle(fontSize: 13),
-                                decoration: const InputDecoration(
-                                  hintText: 'Tempel teks review di sini...',
-                                  hintStyle: TextStyle(fontSize: 12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              height: 40,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  if (_reviewCtrl.text.trim().isNotEmpty) {
-                                    ref
-                                        .read(reviewTextsProvider.notifier)
-                                        .add(_reviewCtrl.text);
-                                    _reviewCtrl.clear();
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: const Text('Tambah',
-                                    style: TextStyle(fontSize: 13)),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Builder(
-                          builder: (context) {
-                            final reviews = ref.watch(reviewTextsProvider);
-                            if (reviews.isEmpty) return const SizedBox.shrink();
-                            return Column(
-                              children: [
-                                const SizedBox(height: 12),
-                                ...reviews.map(
-                                  (r) => Container(
-                                    margin: const EdgeInsets.only(bottom: 8),
-                                    padding:
-                                        const EdgeInsets.fromLTRB(12, 8, 8, 8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.chipGray,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border:
-                                          Border.all(color: AppColors.border),
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            r,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.textPrimary,
-                                              height: 1.4,
-                                            ),
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        GestureDetector(
-                                          onTap: () => ref
-                                              .read(
-                                                  reviewTextsProvider.notifier)
-                                              .remove(r),
-                                          child: const Icon(Icons.close,
-                                              size: 18,
-                                              color: AppColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -548,14 +439,14 @@ class _FileChipRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 72,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: paths.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (_, i) {
-          return Stack(
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: List.generate(paths.length, (i) {
+        return SizedBox(
+          width: 72,
+          height: 72,
+          child: Stack(
             children: [
               if (isImage)
                 ClipRRect(
@@ -597,15 +488,14 @@ class _FileChipRow extends StatelessWidget {
                       color: AppColors.textPrimary,
                       shape: BoxShape.circle,
                     ),
-                    child:
-                        const Icon(Icons.close, color: Colors.white, size: 14),
+                    child: const Icon(Icons.close, color: Colors.white, size: 14),
                   ),
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      }),
     );
   }
 }

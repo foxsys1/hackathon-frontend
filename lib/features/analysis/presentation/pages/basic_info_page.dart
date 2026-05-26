@@ -328,7 +328,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                   TextField(
                     controller: _namaCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Kos Putra Senja Ayu',
+                      hintText: 'Contoh: Kos Putra Bahagia Jogja',
                       errorText: _namaError,
                     ),
                     onChanged: (_) {
@@ -342,7 +342,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                   TextField(
                     controller: _lokasiCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Pogung Baru Blok AIV No.10, Sleman',
+                      hintText: 'Contoh: Jl. Kaliurang KM 5, Sleman, Yogyakarta',
                       prefixIcon:
                           const Icon(Icons.location_on_outlined, size: 20),
                       errorText: _lokasiError,
@@ -367,7 +367,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                               controller: _hargaCtrl,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
-                                hintText: 'Rp1.500.000',
+                                hintText: 'Contoh: Rp1.500.000',
                                 errorText: _hargaError,
                               ),
                               onChanged: (_) {
@@ -389,7 +389,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                               controller: _depositCtrl,
                               keyboardType: TextInputType.number,
                               decoration: const InputDecoration(
-                                hintText: 'Rp1.500.000',
+                                hintText: 'Contoh: Rp500.000 (jika ada)',
                               ),
                             ),
                           ],
@@ -404,7 +404,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                   TextField(
                     controller: _sumberCtrl,
                     decoration: const InputDecoration(
-                      hintText: 'Mamikos',
+                      hintText: 'Contoh: Mamikos, OLX, Instagram, WhatsApp',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -415,7 +415,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                     controller: _deskripsiCtrl,
                     maxLines: 4,
                     decoration: const InputDecoration(
-                      hintText: 'Kos Eksklusif dekat kampus bla bla bladhd',
+                      hintText: 'Contoh: Kos nyaman dekat UGM, fasilitas lengkap, lingkungan bersih dan aman, cocok untuk mahasiswa.',
                     ),
                   ),
                   const SizedBox(height: 24),

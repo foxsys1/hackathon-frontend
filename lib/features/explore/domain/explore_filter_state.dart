@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 
+
 part 'explore_filter_state.freezed.dart';
 part 'explore_filter_state.g.dart';
 
@@ -85,11 +86,9 @@ class ExploreFilterNotifier extends _$ExploreFilterNotifier {
 @riverpod
 List<KosListing> filteredKosListings(FilteredKosListingsRef ref) {
   final filter = ref.watch(exploreFilterNotifierProvider);
-  // Use live API data only — no mock fallback.
-  final apiAsync = ref.watch(apiKosListingsProvider);
-  var listings = List<KosListing>.from(
-    apiAsync.valueOrNull ?? <KosListing>[],
-  );
+  // Use items from the progressive explore notifier.
+  final exploreState = ref.watch(exploreListingsProvider);
+  var listings = List<KosListing>.from(exploreState.items);
 
   // Search filter
   if (filter.searchQuery.isNotEmpty) {

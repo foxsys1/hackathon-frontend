@@ -58,7 +58,7 @@ class HistoryRecord {
   final List<RedFlag> redFlags;
   final List<String> recommendations;
   final AreaComparison? areaComparison;
-  
+
   final String communicationSummary;
   final String visualSummary;
   final int communicationRiskScore;
@@ -69,7 +69,7 @@ class HistoryRecord {
   final bool botTestimonialDetected;
   final bool isCrossCheckFail;
   final String? crossCheckDetails;
-  
+
   final bool roomInteriorDetected;
   final bool realisticImages;
   final bool watermarkDetected;

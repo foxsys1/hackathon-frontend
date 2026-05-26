@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/network/api_service.dart';
@@ -132,6 +133,38 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
       buf.write(str[i]);
     }
     return buf.toString();
+  }
+
+  void _showChatTemplateSheet(BuildContext context, HistoryRecord record) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _HistoryChatTemplateSheet(record: record),
+    );
+  }
+
+  void _shareResult(BuildContext context, HistoryRecord record) {
+    final flags = record.redFlags.map((f) => '• ${f.title}').join('\n');
+    final recs = record.recommendations.map((r) => '• $r').join('\n');
+    final shareText =
+        '=== Hasil KosCheck ===\n'
+        'Kos: ${record.namaKos}\n'
+        'Lokasi: ${record.lokasi}\n'
+        'Harga: ${record.hargaPerBulan}\n'
+        'Risk Score: ${record.riskScore}/100 (${record.riskLabel})\n\n'
+        'Red Flag yang ditemukan:\n${flags.isNotEmpty ? flags : "Tidak ada"}\n\n'
+        'Rekomendasi:\n${recs.isNotEmpty ? recs : "Tidak ada"}\n\n'
+        '--- Dibuat dengan KosCheck App ---';
+    Clipboard.setData(ClipboardData(text: shareText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Ringkasan hasil analisis disalin ke clipboard!'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -269,7 +302,7 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
                                 icon: Icons.chat_bubble_outline,
                                 title: 'Lihat Template\nChat',
                                 subtitle: 'Siap digunakan',
-                                onTap: () {},
+                                onTap: () => _showChatTemplateSheet(context, record),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -278,7 +311,7 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
                                 icon: Icons.share_outlined,
                                 title: 'Bagikan Hasil',
                                 subtitle: 'Kirim ke teman atau\norang tua',
-                                onTap: () {},
+                                onTap: () => _shareResult(context, record),
                               ),
                             ),
                           ],
@@ -1315,6 +1348,8 @@ class _AreaComparisonCard extends StatelessWidget {
           const SizedBox(height: 16),
           _CompRow('Harga Listing', comparison.hargaListing),
           _CompRow('Rata-rata Area', comparison.rataRataArea),
+          if (comparison.medianArea != null)
+            _CompRow('Median Area', comparison.medianArea!),
           const Divider(height: 20),
           Row(
             children: [
@@ -1503,6 +1538,267 @@ class _ActionCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// History Chat Template Bottom Sheet
+// ════════════════════════════════════════════════════════════════════
+
+class _HistoryChatTemplateSheet extends StatelessWidget {
+  const _HistoryChatTemplateSheet({required this.record});
+  final HistoryRecord record;
+
+  List<ChatTemplate> _buildTemplates() {
+    final templates = <ChatTemplate>[];
+    int number = 1;
+    for (final flag in record.redFlags.take(3)) {
+      templates.add(ChatTemplate(
+        number: number++,
+        title: 'Soal ${flag.title}',
+        body: _bodyForFlag(flag),
+      ));
+    }
+    if (templates.isEmpty) {
+      templates.add(const ChatTemplate(
+        number: 1,
+        title: 'Verifikasi Umum',
+        body:
+            'Halo kak, saya tertarik dengan kos yang kak tawarkan. '
+            'Sebelum memutuskan, boleh saya minta beberapa informasi tambahan? '
+            'Bisa tolong kirim foto kondisi kamar terbaru, konfirmasi nama pemilik rekening, '
+            'dan apakah saya boleh survei langsung ke lokasi? Terima kasih banyak kak \u{1F44F}',
+      ));
+    }
+    return templates;
+  }
+
+  String _bodyForFlag(RedFlag flag) {
+    switch (flag.icon) {
+      case 'speed':
+      case 'account_balance':
+        return 'Halo kak, saya tertarik dengan kosnya. Soal pembayarannya — '
+            'rekening yang dipakai atas nama siapa ya? '
+            'Terus apakah ada surat perjanjian sewa atau kuitansi resminya? '
+            'Saya perlu pastiin dulu sebelum transfer, semoga kak ngerti \u{1F64F} Terima kasih!';
+      case 'image_not_supported':
+      case 'hide_image':
+      case 'photo_camera':
+        return 'Halo kak, boleh minta foto atau video terbaru kondisi kamarnya? '
+            'Foto di iklan sepertinya bukan dari kos ini langsung. '
+            'Kalau bisa video call sebentar untuk lihat kondisi nyatanya, itu jauh lebih meyakinkan. '
+            'Terima kasih kak \u{1F64F}';
+      case 'compare_arrows':
+        return 'Halo kak, ada beberapa info yang masih saya bingungkan dari iklan ini. '
+            'Bisa tolong konfirmasi lagi: fasilitas apa saja yang termasuk, '
+            'apakah harga sudah termasuk air/listrik, dan siapa yang bisa dihubungi kalau ada masalah? '
+            'Terima kasih kak \u{1F64F}';
+      default:
+        return 'Halo kak, saya mau nanya soal \'${flag.title.toLowerCase()}\' '
+            'yang saya temukan di listing ini.\n\n'
+            '${flag.description}\n\n'
+            'Boleh dijelasin lebih lanjut supaya saya lebih yakin? Terima kasih kak \u{1F64F}';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final templates = _buildTemplates();
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.chat_bubble_outline,
+                      color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Template Chat',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Langsung salin dan kirim ke pemilik kos',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Template cards — scrollable
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.55,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: templates.map((t) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.scaffoldBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${t.number}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  t.title,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: t.body));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('\'${t.title}\' disalin!'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Salin',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.copy,
+                                        size: 14, color: AppColors.primary),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              t.body,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textPrimary,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            // Copy all button
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  final allText = templates
+                      .map((t) => '${t.title}:\n${t.body}')
+                      .join('\n\n---\n\n');
+                  Clipboard.setData(ClipboardData(text: allText));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Semua template berhasil disalin!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Salin Semua Template'),
               ),
             ),
           ],

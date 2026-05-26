@@ -26,17 +26,15 @@ class AnalysisRepositoryImpl {
       'listing_name': basic.namaKos.isNotEmpty ? basic.namaKos : 'Kos Listing',
       'area_name': areaName,
       'price': priceInt > 0 ? priceInt : 500000,
+      'address_specificity': qc.addressSpecific?.name ?? 'tidakTahu',
+      'photos_match_location': qc.hasPhotos?.name ?? 'tidakTahu',
+      'info_consistency': 'tidakTahu',
+      'dp_requested': qc.transferPressure == TriAnswer.ya,
+      'pressure_to_transfer': qc.transferPressure == TriAnswer.ya,
       'owner_willing_videocall': qc.videoCallAvailable == TriAnswer.ya,
-      if (qc.namaKontak.isNotEmpty) 'contact_name': qc.namaKontak,
-      if (qc.namaRekening.isNotEmpty) 'bank_account_name': qc.namaRekening,
-      if (qc.hasPhotos != null) 'photos_provided': qc.hasPhotos!.name,
-      if (qc.addressSpecific != null &&
-          qc.addressSpecific != TriAnswer.tidakTahu)
-        'specific_address_provided': qc.addressSpecific == TriAnswer.ya,
-      if (qc.transferPressure != null)
-        'urgency_level': qc.transferPressure!.name,
-      if (qc.hasTestimony != null && qc.hasTestimony != TriAnswer.tidakTahu)
-        'has_testimonials': qc.hasTestimony == TriAnswer.ya,
+      'recent_video_provided': qc.videoCallAvailable?.name ?? 'tidakTahu',
+      'bank_account_name_match': qc.knowsAccountName?.name ?? 'tidakTahu',
+      'payment_details_explained': 'tidakTahu',
       'room_facilities': basic.fasilitas,
     });
 

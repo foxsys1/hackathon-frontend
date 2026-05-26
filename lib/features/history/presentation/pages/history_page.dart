@@ -522,7 +522,9 @@ class _HistoryRecordCard extends StatelessWidget {
                     color: AppColors.chipGray,
                     child: Image.network(
                       record.imageUrl,
-                      headers: kIsWeb ? null : const {'Referer': 'https://mamikos.com/'},
+                      headers: kIsWeb
+                          ? null
+                          : const {'Referer': 'https://mamikos.com/'},
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Center(
                         child: Icon(Icons.home_outlined,
@@ -581,6 +583,7 @@ class _HistoryRecordCard extends StatelessWidget {
                         record.sumberListing,
                         style: const TextStyle(
                           fontSize: 11,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.textSecondary,
                         ),
                       ),

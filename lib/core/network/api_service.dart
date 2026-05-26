@@ -28,10 +28,13 @@ class ApiService {
   Future<List<Map<String, dynamic>>> discoverListings(
     String area, {
     int limit = 10,
+    int offset = 0,
   }) async {
+    final queryParams = <String, dynamic>{'area': area, 'limit': limit};
+    if (offset > 0) queryParams['offset'] = offset;
     final response = await _dio.get<dynamic>(
       '/api/v1/discover',
-      queryParameters: {'area': area, 'limit': limit},
+      queryParameters: queryParams,
     );
     final data = response.data;
     if (data is List) {

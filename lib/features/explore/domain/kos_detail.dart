@@ -40,6 +40,9 @@ class KosDetail with _$KosDetail {
     /// Data source, e.g. "Mamikos"
     @Default('') String source,
 
+    /// The original source ID from the scraping/API
+    @Default('') String sourceId,
+
     /// Street address
     @Default('') String address,
 
@@ -66,6 +69,16 @@ class KosDetail with _$KosDetail {
   }) = _KosDetail;
 }
 
+/// Photo sizes returned by the API for a review.
+@freezed
+class ReviewPhoto with _$ReviewPhoto {
+  const factory ReviewPhoto({
+    required String small,
+    required String medium,
+    required String large,
+  }) = _ReviewPhoto;
+}
+
 /// A single user review.
 @freezed
 class KosReview with _$KosReview {
@@ -79,5 +92,8 @@ class KosReview with _$KosReview {
 
     /// Category tags the reviewer associated with
     required List<String> tags,
+
+    /// Photos attached to the review (from API)
+    @Default([]) List<ReviewPhoto> photos,
   }) = _KosReview;
 }

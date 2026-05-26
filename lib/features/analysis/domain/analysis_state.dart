@@ -84,6 +84,7 @@ class AreaComparison with _$AreaComparison {
   const factory AreaComparison({
     required String hargaListing,
     required String rataRataArea,
+    @Default(null) String? medianArea,
     required String selisih,
     required String selisihLabel,
   }) = _AreaComparison;

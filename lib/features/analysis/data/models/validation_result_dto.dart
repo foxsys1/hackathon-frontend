@@ -67,11 +67,17 @@ class PriceComparisonDto {
       selisih = '$sign${diff.toStringAsFixed(1)}% ($keyword)';
       label = selisih;
     }
+    // Build median label
+    final medianStr = areaMedianPrice != null
+        ? 'Rp ${_formatPrice(areaMedianPrice!)} / bulan'
+        : null;
+    final meanStr = areaMeanPrice != null
+        ? 'Rp ${_formatPrice(areaMeanPrice!)} / bulan'
+        : '-';
     return AreaComparison(
       hargaListing: 'Rp ${_formatPrice(listingPrice)} / bulan',
-      rataRataArea: areaMeanPrice != null
-          ? 'Rp ${_formatPrice(areaMeanPrice!)} / bulan'
-          : '-',
+      rataRataArea: meanStr,
+      medianArea: medianStr,
       selisih: selisih,
       selisihLabel: label,
     );
@@ -234,6 +240,7 @@ class ValidationResultDto {
   const ValidationResultDto({
     this.recordId,
     required this.anomalyScore,
+    required this.confidenceScore,
     required this.status,
     required this.detectedAnomalies,
     required this.recommendedActions,
@@ -245,6 +252,8 @@ class ValidationResultDto {
 
   final String? recordId;
   final int anomalyScore;
+  /// The real confidence score returned by the API (0–100).
+  final int confidenceScore;
   final String status;
   final List<DetectedAnomalyDto> detectedAnomalies;
   final List<String> recommendedActions;
@@ -257,6 +266,8 @@ class ValidationResultDto {
     return ValidationResultDto(
       recordId: json['record_id'] as String?,
       anomalyScore: (json['anomaly_score'] as num?)?.toInt() ?? 0,
+      // Use the real API confidence_score — not a derived value.
+      confidenceScore: (json['confidence_score'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? '',
       detectedAnomalies: (json['detected_anomalies'] as List<dynamic>? ?? [])
           .map((e) => DetectedAnomalyDto.fromJson(e as Map<String, dynamic>))
@@ -284,10 +295,8 @@ class ValidationResultDto {
 
     final riskLabel = _labelForScore(anomalyScore);
 
-    // Confidence: inverse of how many "unknown" data-points exist.
-    // Use communication score as a proxy since API doesn't give explicit confidence.
-    final confidence =
-        1.0 - (communicationAnalysis.aiRiskScore / 100.0).clamp(0.0, 1.0);
+    // Use the real confidence_score from the API (0–100 → 0.0–1.0).
+    final confidence = (confidenceScore / 100.0).clamp(0.0, 1.0);
 
     return AnalysisResult(
       riskScore: anomalyScore,
@@ -341,12 +350,61 @@ class ValidationResultDto {
     for (final flag in flags.take(3)) {
       templates.add(ChatTemplate(
         number: number++,
-        title: 'Terkait ${flag.title}',
-        body:
-            'Halo kak, saya ingin menanyakan mengenai "${flag.title}" yang saya temukan.\n\n${flag.description}\n\nBoleh tolong klarifikasi hal ini?',
+        title: 'Soal ${flag.title}',
+        body: _chatBodyForFlag(flag),
+      ));
+    }
+    if (templates.isEmpty) {
+      templates.add(const ChatTemplate(
+        number: 1,
+        title: 'Verifikasi Umum',
+        body: 'Halo kak, saya tertarik dengan kos yang kak tawarkan. '
+            'Sebelum memutuskan, boleh saya minta beberapa info tambahan? '
+            'Bisa tolong kirim foto kondisi kamar terbaru, konfirmasi nama pemilik rekening, '
+            'dan apakah saya boleh survei langsung ke lokasi? Terima kasih banyak kak 🙏',
       ));
     }
     return templates;
+  }
+
+  static String _chatBodyForFlag(RedFlag flag) {
+    switch (flag.icon) {
+      case 'speed':
+        return 'Halo kak, saya ngerti kos ini lagi banyak yang minat. '
+            'Tapi saya perlu survei dulu sebelum bisa transfer. '
+            'Kalau bisa, boleh kita jadwalin kunjungan ke lokasi minggu ini? '
+            'Saya nggak bisa bayar DP sebelum lihat kondisi aslinya. Terima kasih kak 🙏';
+      case 'account_balance':
+        return 'Halo kak, soal pembayarannya — rekening yang dipakai atas nama siapa ya? '
+            'Apakah ada surat perjanjian sewa atau kuitansi resmi yang bisa dikirim? '
+            'Saya perlu pastiin dulu sebelum transfer. Semoga kak maklum ya 🙏 Terima kasih!';
+      case 'report':
+        return 'Halo kak, saya tertarik dengan kosnya. '
+            'Boleh minta kontak dari penghuni yang sudah pernah tinggal di sini? '
+            'Atau ada testimoni asli yang bisa dibagikan? '
+            'Ini penting buat saya sebelum memutuskan. Terima kasih kak 🙏';
+      case 'compare_arrows':
+        return 'Halo kak, ada beberapa detail yang masih membingungkan saya dari iklannya. '
+            'Bisa tolong konfirmasi: fasilitas apa saja yang sudah termasuk, '
+            'apakah harga sudah include listrik dan air, dan nama pemilik kos yang bisa dihubungi langsung? '
+            'Terima kasih kak 🙏';
+      case 'image_not_supported':
+      case 'hide_image':
+        return 'Halo kak, boleh minta foto atau video terbaru kondisi kamarnya? '
+            'Foto di iklan sepertinya bukan dari kos ini langsung. '
+            'Kalau bisa video call sebentar untuk lihat kondisi nyatanya, '
+            'itu jauh lebih meyakinkan buat saya. Terima kasih kak 🙏';
+      case 'photo_camera':
+        return 'Halo kak, bisa tolong kirim foto terbaru kamarnya secara langsung? '
+            'Saya mau pastiin kondisi kamar sesuai dengan yang di iklan. '
+            'Kalau bisa video call juga oke banget! Terima kasih kak 🙏';
+      default:
+        return 'Halo kak, saya mau nanya soal \'${flag.title.toLowerCase()}\' '
+            'yang saya temukan di listing ini.\n\n'
+            '${flag.description}\n\n'
+            'Boleh dijelasin lebih lanjut supaya saya lebih yakin? '
+            'Terima kasih kak 🙏';
+    }
   }
 }
 

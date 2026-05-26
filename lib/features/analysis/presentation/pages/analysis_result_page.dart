@@ -624,6 +624,8 @@ class _AreaComparisonCard extends StatelessWidget {
           const SizedBox(height: 16),
           _ComparisonRow('Harga Listing', comparison.hargaListing),
           _ComparisonRow('Rata-rata Area', comparison.rataRataArea),
+          if (comparison.medianArea != null)
+            _ComparisonRow('Median Area', comparison.medianArea!),
           const Divider(height: 20),
           Row(
             children: [
@@ -985,11 +987,14 @@ class _CommunicationAnalysisCard extends StatelessWidget {
   const _CommunicationAnalysisCard({required this.result});
   final AnalysisResult result;
 
-  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+  Widget _buildBooleanRow(String label, bool value,
+      {bool invertColors = false}) {
     final bool isPositive = invertColors ? !value : value;
-    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final color =
+        isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
     final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
-    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+    final icon =
+        isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1130,12 +1135,18 @@ class _CommunicationAnalysisCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 12),
-          _buildBooleanRow('Ada inkonsistensi?', result.inconsistenciesFound, invertColors: true),
-          _buildBooleanRow('Anomali pembayaran?', result.paymentAnomalyDetected, invertColors: true),
-          _buildBooleanRow('Desakan transfer?', result.urgencyDetected, invertColors: true),
-          _buildBooleanRow('Testimoni bot?', result.botTestimonialDetected, invertColors: true),
-          _buildBooleanRow('Gagal cross-check?', result.isCrossCheckFail, invertColors: true),
-          if (result.crossCheckDetails != null && result.crossCheckDetails!.isNotEmpty) ...[
+          _buildBooleanRow('Ada inkonsistensi?', result.inconsistenciesFound,
+              invertColors: true),
+          _buildBooleanRow('Anomali pembayaran?', result.paymentAnomalyDetected,
+              invertColors: true),
+          _buildBooleanRow('Desakan transfer?', result.urgencyDetected,
+              invertColors: true),
+          _buildBooleanRow('Testimoni bot?', result.botTestimonialDetected,
+              invertColors: true),
+          _buildBooleanRow('Gagal cross-check?', result.isCrossCheckFail,
+              invertColors: true),
+          if (result.crossCheckDetails != null &&
+              result.crossCheckDetails!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(10),
@@ -1146,7 +1157,8 @@ class _CommunicationAnalysisCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  Icon(Icons.info_outline,
+                      size: 16, color: AppColors.chipYellowText),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1176,11 +1188,14 @@ class _VisualAnalysisCard extends StatelessWidget {
   const _VisualAnalysisCard({required this.result});
   final AnalysisResult result;
 
-  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+  Widget _buildBooleanRow(String label, bool value,
+      {bool invertColors = false}) {
     final bool isPositive = invertColors ? !value : value;
-    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final color =
+        isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
     final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
-    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+    final icon =
+        isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1236,7 +1251,8 @@ class _VisualAnalysisCard extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.image_search_outlined, size: 20, color: AppColors.textPrimary),
+              Icon(Icons.image_search_outlined,
+                  size: 20, color: AppColors.textPrimary),
               SizedBox(width: 8),
               Text(
                 'Analisis Visual',
@@ -1262,8 +1278,10 @@ class _VisualAnalysisCard extends StatelessWidget {
           ],
           _buildBooleanRow('Interior terdeteksi?', result.roomInteriorDetected),
           _buildBooleanRow('Foto realistis?', result.realisticImages),
-          _buildBooleanRow('Ada watermark?', result.watermarkDetected, invertColors: true),
-          if (result.watermarkSource != null && result.watermarkSource!.isNotEmpty) ...[
+          _buildBooleanRow('Ada watermark?', result.watermarkDetected,
+              invertColors: true),
+          if (result.watermarkSource != null &&
+              result.watermarkSource!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               'Sumber Watermark: ${result.watermarkSource}',
@@ -1309,7 +1327,8 @@ class _VisualAnalysisCard extends StatelessWidget {
               ),
             ],
           ),
-          if (result.metadataSummary != null && result.metadataSummary!.isNotEmpty) ...[
+          if (result.metadataSummary != null &&
+              result.metadataSummary!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(10),
@@ -1320,7 +1339,8 @@ class _VisualAnalysisCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  Icon(Icons.info_outline,
+                      size: 16, color: AppColors.chipYellowText),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1341,4 +1361,3 @@ class _VisualAnalysisCard extends StatelessWidget {
     );
   }
 }
-
