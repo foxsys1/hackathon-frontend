@@ -149,8 +149,7 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
   void _shareResult(BuildContext context, HistoryRecord record) {
     final flags = record.redFlags.map((f) => '• ${f.title}').join('\n');
     final recs = record.recommendations.map((r) => '• $r').join('\n');
-    final shareText =
-        '=== Hasil KosCheck ===\n'
+    final shareText = '=== Hasil KosCheck ===\n'
         'Kos: ${record.namaKos}\n'
         'Lokasi: ${record.lokasi}\n'
         'Harga: ${record.hargaPerBulan}\n'
@@ -265,11 +264,11 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
                           _RedFlagCard(redFlags: record.redFlags),
                           const SizedBox(height: 20),
                         ],
-                        
+
                         // Communication Analysis
                         _CommunicationAnalysisCard(record: record),
                         const SizedBox(height: 20),
-                        
+
                         // Visual Analysis
                         _VisualAnalysisCard(record: record),
                         const SizedBox(height: 20),
@@ -302,7 +301,8 @@ class _HistoryDetailPageState extends ConsumerState<HistoryDetailPage> {
                                 icon: Icons.chat_bubble_outline,
                                 title: 'Lihat Template\nChat',
                                 subtitle: 'Siap digunakan',
-                                onTap: () => _showChatTemplateSheet(context, record),
+                                onTap: () =>
+                                    _showChatTemplateSheet(context, record),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -409,7 +409,9 @@ class _KosInfoHeader extends StatelessWidget {
                   color: AppColors.chipGray,
                   child: Image.network(
                     record.imageUrl,
-                    headers: kIsWeb ? null : const {'Referer': 'https://mamikos.com/'},
+                    headers: kIsWeb
+                        ? null
+                        : const {'Referer': 'https://mamikos.com/'},
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const Center(
                       child: Icon(Icons.home_outlined,
@@ -765,11 +767,14 @@ class _CommunicationAnalysisCard extends StatelessWidget {
   const _CommunicationAnalysisCard({required this.record});
   final HistoryRecord record;
 
-  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+  Widget _buildBooleanRow(String label, bool value,
+      {bool invertColors = false}) {
     final bool isPositive = invertColors ? !value : value;
-    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final color =
+        isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
     final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
-    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+    final icon =
+        isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -910,12 +915,18 @@ class _CommunicationAnalysisCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 12),
-          _buildBooleanRow('Ada inkonsistensi?', record.inconsistenciesFound, invertColors: true),
-          _buildBooleanRow('Anomali pembayaran?', record.paymentAnomalyDetected, invertColors: true),
-          _buildBooleanRow('Desakan transfer?', record.urgencyDetected, invertColors: true),
-          _buildBooleanRow('Testimoni bot?', record.botTestimonialDetected, invertColors: true),
-          _buildBooleanRow('Gagal cross-check?', record.isCrossCheckFail, invertColors: true),
-          if (record.crossCheckDetails != null && record.crossCheckDetails!.isNotEmpty) ...[
+          _buildBooleanRow('Ada inkonsistensi?', record.inconsistenciesFound,
+              invertColors: true),
+          _buildBooleanRow('Anomali pembayaran?', record.paymentAnomalyDetected,
+              invertColors: true),
+          _buildBooleanRow('Desakan transfer?', record.urgencyDetected,
+              invertColors: true),
+          _buildBooleanRow('Testimoni bot?', record.botTestimonialDetected,
+              invertColors: true),
+          _buildBooleanRow('Gagal cross-check?', record.isCrossCheckFail,
+              invertColors: true),
+          if (record.crossCheckDetails != null &&
+              record.crossCheckDetails!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(10),
@@ -926,7 +937,8 @@ class _CommunicationAnalysisCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  Icon(Icons.info_outline,
+                      size: 16, color: AppColors.chipYellowText),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -956,11 +968,14 @@ class _VisualAnalysisCard extends StatelessWidget {
   const _VisualAnalysisCard({required this.record});
   final HistoryRecord record;
 
-  Widget _buildBooleanRow(String label, bool value, {bool invertColors = false}) {
+  Widget _buildBooleanRow(String label, bool value,
+      {bool invertColors = false}) {
     final bool isPositive = invertColors ? !value : value;
-    final color = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    final color =
+        isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
     final bg = isPositive ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2);
-    final icon = isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
+    final icon =
+        isPositive ? Icons.check_circle_outline : Icons.cancel_outlined;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1016,7 +1031,8 @@ class _VisualAnalysisCard extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.image_search_outlined, size: 20, color: AppColors.textPrimary),
+              Icon(Icons.image_search_outlined,
+                  size: 20, color: AppColors.textPrimary),
               SizedBox(width: 8),
               Text(
                 'Analisis Visual',
@@ -1042,8 +1058,10 @@ class _VisualAnalysisCard extends StatelessWidget {
           ],
           _buildBooleanRow('Interior terdeteksi?', record.roomInteriorDetected),
           _buildBooleanRow('Foto realistis?', record.realisticImages),
-          _buildBooleanRow('Ada watermark?', record.watermarkDetected, invertColors: true),
-          if (record.watermarkSource != null && record.watermarkSource!.isNotEmpty) ...[
+          _buildBooleanRow('Ada watermark?', record.watermarkDetected,
+              invertColors: true),
+          if (record.watermarkSource != null &&
+              record.watermarkSource!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               'Sumber Watermark: ${record.watermarkSource}',
@@ -1089,7 +1107,8 @@ class _VisualAnalysisCard extends StatelessWidget {
               ),
             ],
           ),
-          if (record.metadataSummary != null && record.metadataSummary!.isNotEmpty) ...[
+          if (record.metadataSummary != null &&
+              record.metadataSummary!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(10),
@@ -1100,7 +1119,8 @@ class _VisualAnalysisCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.chipYellowText),
+                  Icon(Icons.info_outline,
+                      size: 16, color: AppColors.chipYellowText),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1557,53 +1577,188 @@ class _HistoryChatTemplateSheet extends StatelessWidget {
 
   List<ChatTemplate> _buildTemplates() {
     final templates = <ChatTemplate>[];
-    int number = 1;
-    for (final flag in record.redFlags.take(3)) {
-      templates.add(ChatTemplate(
-        number: number++,
-        title: 'Soal ${flag.title}',
-        body: _bodyForFlag(flag),
-      ));
+
+    // Opening greeting — always shown first
+    templates.add(const ChatTemplate(
+      number: 1,
+      title: 'Sapaan Awal',
+      body: 'Halo Kak, saya tertarik dengan kos ini. Boleh bertanya beberapa '
+          'hal terkait sistem pembayaran, fasilitas, aturan jam malam, dan '
+          'kebijakan tamu? Terima kasih sebelumnya.',
+    ));
+
+    if (record.redFlags.isEmpty) {
+      // No red flags — show all 6 standard question templates
+      templates.addAll(const [
+        ChatTemplate(
+          number: 2,
+          title: 'Sistem Pembayaran',
+          body: 'Versi sopan:\n'
+              '"Mohon maaf, untuk sistem pembayarannya bagaimana, ya, '
+              'Kak/Bu/Pak? Apakah jatuh temponya di tanggal yang sama setiap '
+              'bulan, dan apakah ada biaya deposit di awal?"\n\n'
+              'Versi santai:\n'
+              '"Kak, mau tanya untuk sistem pembayarannya gimana, ya? '
+              'Biasanya dibayar tiap tanggal berapa dan ada biaya depositnya '
+              'gak, ya?"',
+        ),
+        ChatTemplate(
+          number: 3,
+          title: 'Fasilitas Kamar & Tagihan Bulanan',
+          body: 'Versi sopan:\n'
+              '"Untuk biaya bulanan tersebut, apakah sudah termasuk '
+              '(include) listrik, air, Wi-Fi, dan AC, atau ada biaya '
+              'terpisah? Lalu untuk fasilitas di dalam kamar, apakah sudah '
+              'disediakan kasur, lemari, dan meja?"\n\n'
+              'Versi santai:\n'
+              '"Biaya kostnya udah include listrik, air, Wi-Fi, sama AC '
+              'belum, ya? Terus di dalam kamar udah dapet fasilitas seperti '
+              'kasur, lemari, dan meja juga?"',
+        ),
+        ChatTemplate(
+          number: 4,
+          title: 'Fasilitas Bersama & Aturan Memasak',
+          body: 'Versi sopan:\n'
+              '"Apakah di kos ini diperbolehkan untuk memasak? Serta apakah '
+              'ada fasilitas bersama yang bisa digunakan, seperti dapur, '
+              'kulkas, dispenser, atau mesin cuci?"\n\n'
+              'Versi santai:\n'
+              '"Di sini boleh masak gak, ya? Terus ada fasilitas bersama '
+              'yang bisa dipakai bareng-bareng gak, Kak? Seperti dapur, '
+              'kulkas, dispenser, atau mesin cuci."',
+        ),
+        ChatTemplate(
+          number: 5,
+          title: 'Jam Malam & Akses Kunci',
+          body: 'Versi sopan:\n'
+              '"Untuk aturan jam malamnya bagaimana, ya, Pak/Bu? Apakah '
+              'penghuni kos diberikan kunci gerbang/akses sendiri untuk '
+              'mengantisipasi jika pulang larut malam?"\n\n'
+              'Versi santai:\n'
+              '"Di kos ini ada jam malamnya gak, Kak? Kalau pulang malam, '
+              'apakah dapet kunci gerbang/akses sendiri biar gak kekunci di '
+              'luar?"',
+        ),
+        ChatTemplate(
+          number: 6,
+          title: 'Aturan Menerima Tamu',
+          body: 'Versi sopan:\n'
+              '"Bagaimana dengan kebijakan terkait tamu berkunjung? Apakah '
+              'diperbolehkan masuk ke area kamar, menginap, atau dibatasi '
+              'hanya sampai di ruang tamu saja?"\n\n'
+              'Versi santai:\n'
+              '"Kak, untuk aturan menerima tamu gimana, ya? Apakah boleh '
+              'main sampai kamar, boleh menginap, atau cuma dibatasi sampai '
+              'ruang tamu aja?"',
+        ),
+        ChatTemplate(
+          number: 7,
+          title: 'Biaya Perbaikan & Perawatan',
+          body: 'Versi sopan:\n'
+              '"Jika ke depannya ada fasilitas kamar yang rusak atau '
+              'memerlukan servis (seperti AC atau lampu), apakah biayanya '
+              'ditanggung oleh pemilik kos atau oleh penghuni?"\n\n'
+              'Versi santai:\n'
+              '"Kalau nanti ada fasilitas kamar yang rusak atau butuh servis '
+              '(misal AC kurang dingin), itu biayanya ditanggung pemilik kos '
+              'atau kita sendiri, ya?"',
+        ),
+      ]);
+    } else {
+      // Red flags detected — add a targeted template per unique flag (max 4)
+      int number = 2;
+      final addedKeys = <String>{};
+      for (final flag in record.redFlags.take(4)) {
+        final key = _categoryKeyForFlag(flag);
+        if (addedKeys.contains(key)) continue;
+        addedKeys.add(key);
+        templates.add(ChatTemplate(
+          number: number++,
+          title: _titleForFlag(flag),
+          body: _bodyForFlag(flag),
+        ));
+      }
     }
-    if (templates.isEmpty) {
-      templates.add(const ChatTemplate(
-        number: 1,
-        title: 'Verifikasi Umum',
-        body:
-            'Halo kak, saya tertarik dengan kos yang kak tawarkan. '
-            'Sebelum memutuskan, boleh saya minta beberapa informasi tambahan? '
-            'Bisa tolong kirim foto kondisi kamar terbaru, konfirmasi nama pemilik rekening, '
-            'dan apakah saya boleh survei langsung ke lokasi? Terima kasih banyak kak \u{1F44F}',
-      ));
-    }
+
     return templates;
+  }
+
+  /// Groups similar flag icons under one de-dupe key.
+  String _categoryKeyForFlag(RedFlag flag) {
+    switch (flag.icon) {
+      case 'speed':
+      case 'account_balance':
+        return 'payment';
+      case 'image_not_supported':
+      case 'hide_image':
+      case 'photo_camera':
+        return 'photo';
+      default:
+        return flag.icon;
+    }
+  }
+
+  String _titleForFlag(RedFlag flag) {
+    switch (flag.icon) {
+      case 'speed':
+        return 'Sistem Pembayaran & DP';
+      case 'account_balance':
+        return 'Sistem Pembayaran';
+      case 'report':
+        return 'Verifikasi Testimoni';
+      case 'compare_arrows':
+        return 'Fasilitas Kamar & Tagihan';
+      case 'image_not_supported':
+      case 'hide_image':
+      case 'photo_camera':
+        return 'Foto & Kondisi Kamar';
+      default:
+        return 'Soal ${flag.title}';
+    }
   }
 
   String _bodyForFlag(RedFlag flag) {
     switch (flag.icon) {
       case 'speed':
+        return 'Mohon maaf, Kak — saya ngerti kos ini sedang banyak peminatnya. '
+            'Namun saya perlu survei langsung terlebih dahulu sebelum bisa '
+            'melakukan transfer. Apakah bisa kita jadwalkan kunjungan ke lokasi '
+            'minggu ini? Saya tidak bisa membayar DP sebelum melihat kondisi '
+            'aslinya. Terima kasih atas pengertiannya, Kak 🙏';
       case 'account_balance':
-        return 'Halo kak, saya tertarik dengan kosnya. Soal pembayarannya — '
-            'rekening yang dipakai atas nama siapa ya? '
-            'Terus apakah ada surat perjanjian sewa atau kuitansi resminya? '
-            'Saya perlu pastiin dulu sebelum transfer, semoga kak ngerti \u{1F64F} Terima kasih!';
+        return 'Mohon maaf, untuk sistem pembayarannya bagaimana, ya, Kak? '
+            'Apakah jatuh temponya di tanggal yang sama setiap bulan, dan '
+            'apakah ada biaya deposit di awal? Rekening yang dipakai juga '
+            'atas nama siapa? Dan apakah ada surat perjanjian sewa atau '
+            'kuitansi resmi yang bisa dikirimkan? Terima kasih, Kak 🙏';
+      case 'report':
+        return 'Halo Kak, saya tertarik dengan kosnya. Boleh saya minta kontak '
+            'dari penghuni yang sudah pernah tinggal di sini, atau ada '
+            'testimoni asli yang bisa dibagikan? Ini penting buat saya '
+            'sebelum memutuskan. Terima kasih Kak 🙏';
+      case 'compare_arrows':
+        return 'Untuk biaya bulanan tersebut, apakah sudah termasuk listrik, '
+            'air, Wi-Fi, dan AC, atau ada biaya terpisah? Lalu untuk fasilitas '
+            'di dalam kamar, apakah sudah disediakan kasur, lemari, dan meja? '
+            'Ada beberapa detail dari iklan yang masih membingungkan saya — '
+            'boleh dikonfirmasi ulang, Kak? Terima kasih 🙏';
       case 'image_not_supported':
       case 'hide_image':
+        return 'Halo Kak, boleh minta foto atau video terbaru kondisi kamarnya? '
+            'Foto di iklan sepertinya bukan diambil langsung dari kos ini. '
+            'Kalau bisa video call sebentar untuk melihat kondisi nyatanya, '
+            'itu jauh lebih meyakinkan buat saya. Terima kasih Kak 🙏';
       case 'photo_camera':
-        return 'Halo kak, boleh minta foto atau video terbaru kondisi kamarnya? '
-            'Foto di iklan sepertinya bukan dari kos ini langsung. '
-            'Kalau bisa video call sebentar untuk lihat kondisi nyatanya, itu jauh lebih meyakinkan. '
-            'Terima kasih kak \u{1F64F}';
-      case 'compare_arrows':
-        return 'Halo kak, ada beberapa info yang masih saya bingungkan dari iklan ini. '
-            'Bisa tolong konfirmasi lagi: fasilitas apa saja yang termasuk, '
-            'apakah harga sudah termasuk air/listrik, dan siapa yang bisa dihubungi kalau ada masalah? '
-            'Terima kasih kak \u{1F64F}';
+        return 'Halo Kak, bisa tolong kirim foto terbaru kamarnya secara '
+            'langsung? Saya ingin memastikan kondisi kamar sesuai dengan '
+            'yang ada di iklan. Kalau bisa video call juga, itu lebih '
+            'meyakinkan. Terima kasih Kak 🙏';
       default:
-        return 'Halo kak, saya mau nanya soal \'${flag.title.toLowerCase()}\' '
+        return 'Halo Kak, saya mau menanyakan soal \'${flag.title.toLowerCase()}\' '
             'yang saya temukan di listing ini.\n\n'
             '${flag.description}\n\n'
-            'Boleh dijelasin lebih lanjut supaya saya lebih yakin? Terima kasih kak \u{1F64F}';
+            'Boleh dijelaskan lebih lanjut supaya saya lebih yakin? '
+            'Terima kasih Kak 🙏';
     }
   }
 
@@ -1728,7 +1883,8 @@ class _HistoryChatTemplateSheet extends StatelessWidget {
                               ),
                               GestureDetector(
                                 onTap: () {
-                                  Clipboard.setData(ClipboardData(text: t.body));
+                                  Clipboard.setData(
+                                      ClipboardData(text: t.body));
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text('\'${t.title}\' disalin!'),

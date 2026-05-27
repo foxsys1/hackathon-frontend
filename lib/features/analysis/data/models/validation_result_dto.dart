@@ -252,6 +252,7 @@ class ValidationResultDto {
 
   final String? recordId;
   final int anomalyScore;
+
   /// The real confidence score returned by the API (0–100).
   final int confidenceScore;
   final String status;
@@ -346,64 +347,188 @@ class ValidationResultDto {
 
   static List<ChatTemplate> _buildChatTemplates(List<RedFlag> flags) {
     final templates = <ChatTemplate>[];
-    int number = 1;
-    for (final flag in flags.take(3)) {
-      templates.add(ChatTemplate(
-        number: number++,
-        title: 'Soal ${flag.title}',
-        body: _chatBodyForFlag(flag),
-      ));
+
+    // Opening greeting — always shown first
+    templates.add(const ChatTemplate(
+      number: 1,
+      title: 'Sapaan Awal',
+      body: 'Halo Kak, saya tertarik dengan kos ini. Boleh bertanya beberapa '
+          'hal terkait sistem pembayaran, fasilitas, aturan jam malam, dan '
+          'kebijakan tamu? Terima kasih sebelumnya.',
+    ));
+
+    if (flags.isEmpty) {
+      // No red flags detected — show the full 6 standard question templates
+      templates.addAll(const [
+        ChatTemplate(
+          number: 2,
+          title: 'Sistem Pembayaran',
+          body: 'Versi sopan:\n'
+              '"Mohon maaf, untuk sistem pembayarannya bagaimana, ya, '
+              'Kak/Bu/Pak? Apakah jatuh temponya di tanggal yang sama setiap '
+              'bulan, dan apakah ada biaya deposit di awal?"\n\n'
+              'Versi santai:\n'
+              '"Kak, mau tanya untuk sistem pembayarannya gimana, ya? '
+              'Biasanya dibayar tiap tanggal berapa dan ada biaya depositnya '
+              'gak, ya?"',
+        ),
+        ChatTemplate(
+          number: 3,
+          title: 'Fasilitas Kamar & Tagihan Bulanan',
+          body: 'Versi sopan:\n'
+              '"Untuk biaya bulanan tersebut, apakah sudah termasuk '
+              '(include) listrik, air, Wi-Fi, dan AC, atau ada biaya '
+              'terpisah? Lalu untuk fasilitas di dalam kamar, apakah sudah '
+              'disediakan kasur, lemari, dan meja?"\n\n'
+              'Versi santai:\n'
+              '"Biaya kostnya udah include listrik, air, Wi-Fi, sama AC '
+              'belum, ya? Terus di dalam kamar udah dapet fasilitas seperti '
+              'kasur, lemari, dan meja juga?"',
+        ),
+        ChatTemplate(
+          number: 4,
+          title: 'Fasilitas Bersama & Aturan Memasak',
+          body: 'Versi sopan:\n'
+              '"Apakah di kos ini diperbolehkan untuk memasak? Serta apakah '
+              'ada fasilitas bersama yang bisa digunakan, seperti dapur, '
+              'kulkas, dispenser, atau mesin cuci?"\n\n'
+              'Versi santai:\n'
+              '"Di sini boleh masak gak, ya? Terus ada fasilitas bersama '
+              'yang bisa dipakai bareng-bareng gak, Kak? Seperti dapur, '
+              'kulkas, dispenser, atau mesin cuci."',
+        ),
+        ChatTemplate(
+          number: 5,
+          title: 'Jam Malam & Akses Kunci',
+          body: 'Versi sopan:\n'
+              '"Untuk aturan jam malamnya bagaimana, ya, Pak/Bu? Apakah '
+              'penghuni kos diberikan kunci gerbang/akses sendiri untuk '
+              'mengantisipasi jika pulang larut malam?"\n\n'
+              'Versi santai:\n'
+              '"Di kos ini ada jam malamnya gak, Kak? Kalau pulang malam, '
+              'apakah dapet kunci gerbang/akses sendiri biar gak kekunci di '
+              'luar?"',
+        ),
+        ChatTemplate(
+          number: 6,
+          title: 'Aturan Menerima Tamu',
+          body: 'Versi sopan:\n'
+              '"Bagaimana dengan kebijakan terkait tamu berkunjung? Apakah '
+              'diperbolehkan masuk ke area kamar, menginap, atau dibatasi '
+              'hanya sampai di ruang tamu saja?"\n\n'
+              'Versi santai:\n'
+              '"Kak, untuk aturan menerima tamu gimana, ya? Apakah boleh '
+              'main sampai kamar, boleh menginap, atau cuma dibatasi sampai '
+              'ruang tamu aja?"',
+        ),
+        ChatTemplate(
+          number: 7,
+          title: 'Biaya Perbaikan & Perawatan',
+          body: 'Versi sopan:\n'
+              '"Jika ke depannya ada fasilitas kamar yang rusak atau '
+              'memerlukan servis (seperti AC atau lampu), apakah biayanya '
+              'ditanggung oleh pemilik kos atau oleh penghuni?"\n\n'
+              'Versi santai:\n'
+              '"Kalau nanti ada fasilitas kamar yang rusak atau butuh servis '
+              '(misal AC kurang dingin), itu biayanya ditanggung pemilik kos '
+              'atau kita sendiri, ya?"',
+        ),
+      ]);
+    } else {
+      // Red flags detected — add a targeted template per unique flag (max 4)
+      int number = 2;
+      final addedIcons = <String>{};
+      for (final flag in flags.take(4)) {
+        final key = _categoryKeyForFlag(flag);
+        if (addedIcons.contains(key)) continue;
+        addedIcons.add(key);
+        templates.add(ChatTemplate(
+          number: number++,
+          title: _titleForFlag(flag),
+          body: _chatBodyForFlag(flag),
+        ));
+      }
     }
-    if (templates.isEmpty) {
-      templates.add(const ChatTemplate(
-        number: 1,
-        title: 'Verifikasi Umum',
-        body: 'Halo kak, saya tertarik dengan kos yang kak tawarkan. '
-            'Sebelum memutuskan, boleh saya minta beberapa info tambahan? '
-            'Bisa tolong kirim foto kondisi kamar terbaru, konfirmasi nama pemilik rekening, '
-            'dan apakah saya boleh survei langsung ke lokasi? Terima kasih banyak kak 🙏',
-      ));
-    }
+
     return templates;
+  }
+
+  /// Groups similar flag icons into a single de-dupe key.
+  static String _categoryKeyForFlag(RedFlag flag) {
+    switch (flag.icon) {
+      case 'speed':
+      case 'account_balance':
+        return 'payment';
+      case 'image_not_supported':
+      case 'hide_image':
+      case 'photo_camera':
+        return 'photo';
+      default:
+        return flag.icon;
+    }
+  }
+
+  static String _titleForFlag(RedFlag flag) {
+    switch (flag.icon) {
+      case 'speed':
+        return 'Sistem Pembayaran & DP';
+      case 'account_balance':
+        return 'Sistem Pembayaran';
+      case 'report':
+        return 'Verifikasi Testimoni';
+      case 'compare_arrows':
+        return 'Fasilitas Kamar & Tagihan';
+      case 'image_not_supported':
+      case 'hide_image':
+      case 'photo_camera':
+        return 'Foto & Kondisi Kamar';
+      default:
+        return 'Soal ${flag.title}';
+    }
   }
 
   static String _chatBodyForFlag(RedFlag flag) {
     switch (flag.icon) {
       case 'speed':
-        return 'Halo kak, saya ngerti kos ini lagi banyak yang minat. '
-            'Tapi saya perlu survei dulu sebelum bisa transfer. '
-            'Kalau bisa, boleh kita jadwalin kunjungan ke lokasi minggu ini? '
-            'Saya nggak bisa bayar DP sebelum lihat kondisi aslinya. Terima kasih kak 🙏';
+        return 'Mohon maaf, Kak — saya ngerti kos ini sedang banyak peminatnya. '
+            'Namun saya perlu survei langsung terlebih dahulu sebelum bisa '
+            'melakukan transfer. Apakah bisa kita jadwalkan kunjungan ke lokasi '
+            'minggu ini? Saya tidak bisa membayar DP sebelum melihat kondisi '
+            'aslinya. Terima kasih atas pengertiannya, Kak 🙏';
       case 'account_balance':
-        return 'Halo kak, soal pembayarannya — rekening yang dipakai atas nama siapa ya? '
-            'Apakah ada surat perjanjian sewa atau kuitansi resmi yang bisa dikirim? '
-            'Saya perlu pastiin dulu sebelum transfer. Semoga kak maklum ya 🙏 Terima kasih!';
+        return 'Mohon maaf, untuk sistem pembayarannya bagaimana, ya, Kak? '
+            'Apakah jatuh temponya di tanggal yang sama setiap bulan, dan '
+            'apakah ada biaya deposit di awal? Rekening yang dipakai juga '
+            'atas nama siapa? Dan apakah ada surat perjanjian sewa atau '
+            'kuitansi resmi yang bisa dikirimkan? Terima kasih, Kak 🙏';
       case 'report':
-        return 'Halo kak, saya tertarik dengan kosnya. '
-            'Boleh minta kontak dari penghuni yang sudah pernah tinggal di sini? '
-            'Atau ada testimoni asli yang bisa dibagikan? '
-            'Ini penting buat saya sebelum memutuskan. Terima kasih kak 🙏';
+        return 'Halo Kak, saya tertarik dengan kosnya. Boleh saya minta kontak '
+            'dari penghuni yang sudah pernah tinggal di sini, atau ada '
+            'testimoni asli yang bisa dibagikan? Ini penting buat saya '
+            'sebelum memutuskan. Terima kasih Kak 🙏';
       case 'compare_arrows':
-        return 'Halo kak, ada beberapa detail yang masih membingungkan saya dari iklannya. '
-            'Bisa tolong konfirmasi: fasilitas apa saja yang sudah termasuk, '
-            'apakah harga sudah include listrik dan air, dan nama pemilik kos yang bisa dihubungi langsung? '
-            'Terima kasih kak 🙏';
+        return 'Untuk biaya bulanan tersebut, apakah sudah termasuk listrik, '
+            'air, Wi-Fi, dan AC, atau ada biaya terpisah? Lalu untuk fasilitas '
+            'di dalam kamar, apakah sudah disediakan kasur, lemari, dan meja? '
+            'Ada beberapa detail dari iklan yang masih membingungkan saya — '
+            'boleh dikonfirmasi ulang, Kak? Terima kasih 🙏';
       case 'image_not_supported':
       case 'hide_image':
-        return 'Halo kak, boleh minta foto atau video terbaru kondisi kamarnya? '
-            'Foto di iklan sepertinya bukan dari kos ini langsung. '
-            'Kalau bisa video call sebentar untuk lihat kondisi nyatanya, '
-            'itu jauh lebih meyakinkan buat saya. Terima kasih kak 🙏';
+        return 'Halo Kak, boleh minta foto atau video terbaru kondisi kamarnya? '
+            'Foto di iklan sepertinya bukan diambil langsung dari kos ini. '
+            'Kalau bisa video call sebentar untuk melihat kondisi nyatanya, '
+            'itu jauh lebih meyakinkan buat saya. Terima kasih Kak 🙏';
       case 'photo_camera':
-        return 'Halo kak, bisa tolong kirim foto terbaru kamarnya secara langsung? '
-            'Saya mau pastiin kondisi kamar sesuai dengan yang di iklan. '
-            'Kalau bisa video call juga oke banget! Terima kasih kak 🙏';
+        return 'Halo Kak, bisa tolong kirim foto terbaru kamarnya secara '
+            'langsung? Saya ingin memastikan kondisi kamar sesuai dengan '
+            'yang ada di iklan. Kalau bisa video call juga, itu lebih '
+            'meyakinkan. Terima kasih Kak 🙏';
       default:
-        return 'Halo kak, saya mau nanya soal \'${flag.title.toLowerCase()}\' '
+        return 'Halo Kak, saya mau menanyakan soal \'${flag.title.toLowerCase()}\' '
             'yang saya temukan di listing ini.\n\n'
             '${flag.description}\n\n'
-            'Boleh dijelasin lebih lanjut supaya saya lebih yakin? '
-            'Terima kasih kak 🙏';
+            'Boleh dijelaskan lebih lanjut supaya saya lebih yakin? '
+            'Terima kasih Kak 🙏';
     }
   }
 }
