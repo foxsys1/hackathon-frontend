@@ -107,93 +107,73 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Q1 — Foto & Video
-                  _QuestionCard(
-                    number: 1,
-                    question: 'Apakah ada foto dan video yang diberikan?',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _TriToggle(
-                          value: _qc.hasPhotos,
-                          labels: const ['Ada', 'Hanya foto saja', 'Tidak'],
-                          values: const [TriAnswer.ya, TriAnswer.tidakTahu, TriAnswer.tidak],
-                          onChanged: (v) => setState(() => _qc = _qc.copyWith(hasPhotos: v)),
-                        ),
-                        if (_qc.hasPhotos == TriAnswer.ya ||
-                            _qc.hasPhotos == TriAnswer.tidakTahu) ...[
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Unggah foto/video (opsional)',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Unggah bukti foto/video dari listing (maks. 5 file)',
-                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                          ),
-                          const SizedBox(height: 12),
-                          _UploadBox(
-                            label: 'Pilih foto',
-                            subtitle: 'PNG, JPG — Maks. 5 foto',
-                            onTap: () async {
-                              if (_qc.uploadedPhotoPaths.length >= 5) return;
-                              final images = await _picker.pickMultiImage(
-                                imageQuality: 80,
-                              );
-                              if (images.isNotEmpty) {
-                                final remaining = 5 - _qc.uploadedPhotoPaths.length;
-                                setState(() {
-                                  _qc = _qc.copyWith(
-                                    uploadedPhotoPaths: [
-                                      ..._qc.uploadedPhotoPaths,
-                                      ...images.take(remaining).map((x) => x.path),
-                                    ],
-                                  );
-                                });
-                              }
-                            },
-                          ),
-                          if (_qc.uploadedPhotoPaths.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            _FileChipRow(
-                              paths: _qc.uploadedPhotoPaths,
-                              onRemove: (p) => setState(() {
-                                _qc = _qc.copyWith(
-                                  uploadedPhotoPaths:
-                                      _qc.uploadedPhotoPaths.where((x) => x != p).toList(),
-                                );
-                              }),
-                            ),
-                          ],
-                        ],
-                      ],
+                  // Foto Upload Section (moved to top)
+                  const Text(
+                    'Unggah Foto/Video Listing (Opsional)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Unggah bukti foto/video dari listing (maks. 5 file)',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  _UploadBox(
+                    label: 'Pilih foto',
+                    subtitle: 'PNG, JPG — Maks. 5 foto',
+                    onTap: () async {
+                      if (_qc.uploadedPhotoPaths.length >= 5) return;
+                      final images = await _picker.pickMultiImage(
+                        imageQuality: 80,
+                      );
+                      if (images.isNotEmpty) {
+                        final remaining = 5 - _qc.uploadedPhotoPaths.length;
+                        setState(() {
+                          _qc = _qc.copyWith(
+                            uploadedPhotoPaths: [
+                              ..._qc.uploadedPhotoPaths,
+                              ...images.take(remaining).map((x) => x.path),
+                            ],
+                          );
+                        });
+                      }
+                    },
+                  ),
+                  if (_qc.uploadedPhotoPaths.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _FileChipRow(
+                      paths: _qc.uploadedPhotoPaths,
+                      onRemove: (p) => setState(() {
+                        _qc = _qc.copyWith(
+                          uploadedPhotoPaths:
+                              _qc.uploadedPhotoPaths.where((x) => x != p).toList(),
+                        );
+                      }),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
 
-                  // Q2 — Alamat
+                  // Q1
                   _QuestionCard(
-                    number: 2,
-                    question: 'Apakah alamat yang diberikan spesifik dan dapat ditelusuri melalui Maps?',
+                    number: 1,
+                    question: 'Apakah alamat kos yang diberikan spesifik dan dapat ditelusuri melalui Google Maps atau Peta Lainnya?',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _TriToggle(
+                        _GenericToggle<Q1AddressAnswer>(
                           value: _qc.addressSpecific,
-                          labels: const ['Ya', 'Tidak'],
-                          values: const [TriAnswer.ya, TriAnswer.tidak],
+                          labels: const ['Ya, spesifik & bisa di-Maps', 'Hanya alamat (tanpa Maps)', 'Hanya area (cth: dekat UGM)'],
+                          values: const [Q1AddressAnswer.ya, Q1AddressAnswer.hanyaAlamat, Q1AddressAnswer.hanyaArea],
                           onChanged: (v) => setState(() => _qc = _qc.copyWith(addressSpecific: v)),
                         ),
                         const SizedBox(height: 16),
                         const Text(
                           'Masukkan tautan lokasi dari Google Maps (opsional)',
                           style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tambahkan lokasi agar alamat lebih mudah diverifikasi',
-                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -208,21 +188,99 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Q3 — Kontak
+                  // Q2
+                  _QuestionCard(
+                    number: 2,
+                    question: 'Apakah foto bangunan/kamar yang diberikan sesuai dengan lokasi kos? (Jika dibandingkan melalui Google Maps/ Street View/ Lokasi sekitar)',
+                    child: _GenericToggle<TriAnswer>(
+                      value: _qc.photoMatchLocation,
+                      labels: const ['Ya, sesuai', 'Belum bisa dipastikan', 'Tidak sesuai'],
+                      values: const [TriAnswer.ya, TriAnswer.tidakTahu, TriAnswer.tidak],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(photoMatchLocation: v)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Q3
                   _QuestionCard(
                     number: 3,
-                    question: 'Siapa nama kontak yang anda hubungi?',
+                    question: 'Apakah informasi fasilitas, harga, dan aturan kos dijelaskan secara konsisten dari awal?',
+                    child: _GenericToggle<TriAnswer>(
+                      value: _qc.infoConsistent,
+                      labels: const ['Ya, konsisten', 'Tidak, ada perubahan informasi', 'Tidak tahu'],
+                      values: const [TriAnswer.ya, TriAnswer.tidak, TriAnswer.tidakTahu],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(infoConsistent: v)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Q4
+                  _QuestionCard(
+                    number: 4,
+                    question: 'Apakah pengelola mengizinkan survei langsung atau video call di lokasi kos?',
+                    child: _GenericToggle<TriAnswer>(
+                      value: _qc.surveyOrVideoCallAllowed,
+                      labels: const ['Ya', 'Tidak'],
+                      values: const [TriAnswer.ya, TriAnswer.tidak],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(surveyOrVideoCallAllowed: v)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Q5
+                  _QuestionCard(
+                    number: 5,
+                    question: 'Jika ya, Apakah pengelola meminta untuk melakukan DP terlebih dahulu?',
+                    child: _GenericToggle<TriAnswer>(
+                      value: _qc.dpRequestedBeforeSurvey,
+                      labels: const ['Ya, diminta DP dulu', 'Tidak'],
+                      values: const [TriAnswer.ya, TriAnswer.tidak],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(dpRequestedBeforeSurvey: v)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Q6
+                  _QuestionCard(
+                    number: 6,
+                    question: 'Apakah pengelola menekan Anda untuk segera transfer DP dengan alasan kamar hampir habis atau banyak peminat?',
+                    child: _GenericToggle<TriAnswer>(
+                      value: _qc.pressureToTransfer,
+                      labels: const ['Ya, ada tekanan', 'Tidak'],
+                      values: const [TriAnswer.ya, TriAnswer.tidak],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(pressureToTransfer: v)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Q7
+                  _QuestionCard(
+                    number: 7,
+                    question: 'Apakah pengelola bersedia mengirim video terbaru sesuai permintaan?',
+                    child: _GenericToggle<Q7VideoAnswer>(
+                      value: _qc.willingToProvideVideo,
+                      labels: const ['Ya, bersedia', 'Hanya video lama', 'Tidak bersedia'],
+                      values: const [Q7VideoAnswer.ya, Q7VideoAnswer.hanyaVideoLama, Q7VideoAnswer.tidak],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(willingToProvideVideo: v)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Q8
+                  _QuestionCard(
+                    number: 8,
+                    question: 'Apakah nomor WhatsApp atau kontak pengelola menggunakan identitas yang konsisten dengan nama yang tertera pada rekening?',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _TriToggle(
-                          value: _qc.knowsContactName,
-                          labels: const ['Saya tahu', 'Tidak tahu'],
-                          values: const [TriAnswer.ya, TriAnswer.tidakTahu],
-                          onChanged: (v) => setState(() => _qc = _qc.copyWith(knowsContactName: v)),
+                        _GenericToggle<TriAnswer>(
+                          value: _qc.identityConsistent,
+                          labels: const ['Ya, konsisten', 'Tidak konsisten', 'Tidak tahu / belum bisa dipastikan'],
+                          values: const [TriAnswer.ya, TriAnswer.tidak, TriAnswer.tidakTahu],
+                          onChanged: (v) => setState(() => _qc = _qc.copyWith(identityConsistent: v)),
                         ),
-                        if (_qc.knowsContactName == TriAnswer.ya) ...[
-                          const SizedBox(height: 12),
+                        if (_qc.identityConsistent == TriAnswer.ya) ...[
+                          const SizedBox(height: 16),
                           _subLabel('Nama Kontak'),
                           const SizedBox(height: 8),
                           TextField(
@@ -232,27 +290,7 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                               prefixIcon: Icon(Icons.person_outline, size: 18),
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Q4 — Rekening
-                  _QuestionCard(
-                    number: 4,
-                    question: 'Siapa nama yang tertera di rekening bank untuk transfer DP?',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _TriToggle(
-                          value: _qc.knowsAccountName,
-                          labels: const ['Saya tahu', 'Tidak tahu'],
-                          values: const [TriAnswer.ya, TriAnswer.tidakTahu],
-                          onChanged: (v) => setState(() => _qc = _qc.copyWith(knowsAccountName: v)),
-                        ),
-                        if (_qc.knowsAccountName == TriAnswer.ya) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           _subLabel('Nama di Rekening Bank'),
                           const SizedBox(height: 8),
                           TextField(
@@ -268,41 +306,15 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Q5 — Video call
+                  // Q9
                   _QuestionCard(
-                    number: 5,
-                    question: 'Apakah pemilik bersedia melakukan video call/mengizinkan survei untuk menunjukkan kondisi kamar sebelum transfer DP?',
-                    child: _TriToggle(
-                      value: _qc.videoCallAvailable,
-                      labels: const ['Ya', 'Tidak'],
-                      values: const [TriAnswer.ya, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(videoCallAvailable: v)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Q6 — Tekanan transfer
-                  _QuestionCard(
-                    number: 6,
-                    question: 'Apakah pemilik menekan anda untuk melakukan transfer dalam waktu singkat?',
-                    child: _TriToggle(
-                      value: _qc.transferPressure,
-                      labels: const ['Ya', 'Sedikit', 'Tidak'],
-                      values: const [TriAnswer.ya, TriAnswer.tidakTahu, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(transferPressure: v)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Q7 — Testimoni
-                  _QuestionCard(
-                    number: 7,
-                    question: 'Apakah ada testimoni dari pengguna sebelumnya?',
-                    child: _TriToggle(
-                      value: _qc.hasTestimony,
-                      labels: const ['Ya', 'Tidak'],
-                      values: const [TriAnswer.ya, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(hasTestimony: v)),
+                    number: 9,
+                    question: 'Apakah pengelola menjelaskan rincian pembayaran sebelum meminta transfer?',
+                    child: _GenericToggle<Q9PaymentAnswer>(
+                      value: _qc.paymentDetailsClear,
+                      labels: const ['Ya, jelas lengkap', 'Sebagian dijelaskan', 'Tidak dijelaskan, hanya diminta transfer', 'Belum sampai tahap pembayaran'],
+                      values: const [Q9PaymentAnswer.jelas, Q9PaymentAnswer.sebagian, Q9PaymentAnswer.tidakDijelaskan, Q9PaymentAnswer.belumTahap],
+                      onChanged: (v) => setState(() => _qc = _qc.copyWith(paymentDetailsClear: v)),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -454,44 +466,99 @@ class _QuestionCard extends StatelessWidget {
   }
 }
 
-class _TriToggle extends StatelessWidget {
-  const _TriToggle({
+class _GenericToggle<T> extends StatelessWidget {
+  const _GenericToggle({
     required this.value,
     required this.labels,
     required this.values,
     required this.onChanged,
   });
 
-  final TriAnswer? value;
+  final T? value;
   final List<String> labels;
-  final List<TriAnswer> values;
-  final ValueChanged<TriAnswer> onChanged;
+  final List<T> values;
+  final ValueChanged<T?> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: List.generate(labels.length, (i) {
         final selected = value == values[i];
-        return GestureDetector(
-          onTap: () => onChanged(values[i]),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: selected ? AppColors.primary.withOpacity(0.1) : Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: selected ? AppColors.primary : AppColors.border,
-                width: selected ? 1.5 : 1,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: GestureDetector(
+            onTap: () => onChanged(selected ? null : values[i]),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              decoration: BoxDecoration(
+                color: selected ? AppColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: selected ? AppColors.primary : const Color(0xFFE2E8F0),
+                  width: 1.5,
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.18),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
               ),
-            ),
-            child: Text(
-              labels[i],
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? AppColors.primary : AppColors.textPrimary,
+              child: Row(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? Colors.white : Colors.transparent,
+                      border: Border.all(
+                        color: selected
+                            ? Colors.white
+                            : const Color(0xFFCBD5E1),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: selected
+                        ? Center(
+                            child: Icon(
+                              Icons.check_rounded,
+                              size: 11,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      labels[i],
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w400,
+                        color: selected
+                            ? Colors.white
+                            : const Color(0xFF374151),
+                        letterSpacing: 0.0,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

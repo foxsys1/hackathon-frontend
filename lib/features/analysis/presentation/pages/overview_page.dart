@@ -110,53 +110,67 @@ class OverviewPage extends ConsumerWidget {
                     child: Column(
                       children: [
                         _VerifRow(
-                          Icons.photo_camera_outlined,
-                          'Kelengkapan Foto/Video',
-                          _triChipLabel(qc.hasPhotos),
-                          _triChipColor(qc.hasPhotos),
-                          _triChipTextColor(qc.hasPhotos),
-                        ),
-                        _VerifRow(
                           Icons.location_on_outlined,
-                          'Alamat lengkap',
-                          _triChipLabel(qc.addressSpecific),
-                          _triChipColor(qc.addressSpecific),
-                          _triChipTextColor(qc.addressSpecific),
+                          'Alamat spesifik',
+                          _q1Label(qc.addressSpecific),
+                          _q1Color(qc.addressSpecific),
+                          _q1TextColor(qc.addressSpecific),
                         ),
                         _VerifRow(
-                          Icons.person_outline,
-                          'Nama sesuai',
-                          _triChipLabel(qc.knowsContactName),
-                          _triChipColor(qc.knowsContactName),
-                          _triChipTextColor(qc.knowsContactName),
+                          Icons.photo_camera_outlined,
+                          'Foto sesuai lokasi',
+                          _triChipLabel(qc.photoMatchLocation),
+                          _triChipColor(qc.photoMatchLocation),
+                          _triChipTextColor(qc.photoMatchLocation),
+                        ),
+                        _VerifRow(
+                          Icons.info_outline,
+                          'Info konsisten',
+                          _triChipLabel(qc.infoConsistent),
+                          _triChipColor(qc.infoConsistent),
+                          _triChipTextColor(qc.infoConsistent),
                         ),
                         _VerifRow(
                           Icons.videocam_outlined,
-                          'Video call tersedia',
-                          _triChipLabel(qc.videoCallAvailable),
-                          _triChipColor(qc.videoCallAvailable),
-                          _triChipTextColor(qc.videoCallAvailable),
+                          'Survei/Video call diizinkan',
+                          _triChipLabel(qc.surveyOrVideoCallAllowed),
+                          _triChipColor(qc.surveyOrVideoCallAllowed),
+                          _triChipTextColor(qc.surveyOrVideoCallAllowed),
                         ),
                         _VerifRow(
-                          Icons.assignment_outlined,
-                          'Survei diperbolehkan',
-                          _triChipLabel(qc.surveyAllowed),
-                          _triChipColor(qc.surveyAllowed),
-                          _triChipTextColor(qc.surveyAllowed),
+                          Icons.account_balance_wallet_outlined,
+                          'DP diminta sebelum survei',
+                          _triChipLabel(qc.dpRequestedBeforeSurvey),
+                          _triChipColorInverted(qc.dpRequestedBeforeSurvey),
+                          _triChipTextColorInverted(qc.dpRequestedBeforeSurvey),
                         ),
                         _VerifRow(
-                          Icons.payment_outlined,
+                          Icons.warning_amber_outlined,
                           'Tekanan transfer DP',
-                          _triChipLabel(qc.transferPressure),
-                          _triChipColor(qc.transferPressure),
-                          _triChipTextColor(qc.transferPressure),
+                          _triChipLabel(qc.pressureToTransfer),
+                          _triChipColorInverted(qc.pressureToTransfer),
+                          _triChipTextColorInverted(qc.pressureToTransfer),
                         ),
                         _VerifRow(
-                          Icons.rate_review_outlined,
-                          'Ada testimoni',
-                          _triChipLabel(qc.hasTestimony),
-                          _triChipColor(qc.hasTestimony),
-                          _triChipTextColor(qc.hasTestimony),
+                          Icons.video_library_outlined,
+                          'Bersedia kirim video terbaru',
+                          _q7Label(qc.willingToProvideVideo),
+                          _q7Color(qc.willingToProvideVideo),
+                          _q7TextColor(qc.willingToProvideVideo),
+                        ),
+                        _VerifRow(
+                          Icons.person_outline,
+                          'Identitas konsisten',
+                          _triChipLabel(qc.identityConsistent),
+                          _triChipColor(qc.identityConsistent),
+                          _triChipTextColor(qc.identityConsistent),
+                        ),
+                        _VerifRow(
+                          Icons.receipt_long_outlined,
+                          'Rincian pembayaran jelas',
+                          _q9Label(qc.paymentDetailsClear),
+                          _q9Color(qc.paymentDetailsClear),
+                          _q9TextColor(qc.paymentDetailsClear),
                         ),
                       ],
                     ),
@@ -227,7 +241,7 @@ class OverviewPage extends ConsumerWidget {
     );
   }
 
-  // ── Helpers ──
+  // ── TriAnswer helpers ──
   String _triChipLabel(TriAnswer? val) {
     if (val == null) return '-';
     switch (val) {
@@ -261,6 +275,148 @@ class OverviewPage extends ConsumerWidget {
         return AppColors.chipRedText;
       case TriAnswer.tidakTahu:
         return AppColors.chipYellowText;
+    }
+  }
+
+  // Inverted: Ya = red (bad), Tidak = green (good)
+  Color _triChipColorInverted(TriAnswer? val) {
+    if (val == null) return AppColors.chipGray;
+    switch (val) {
+      case TriAnswer.ya:
+        return AppColors.chipRed;
+      case TriAnswer.tidak:
+        return AppColors.chipGreen;
+      case TriAnswer.tidakTahu:
+        return AppColors.chipYellow;
+    }
+  }
+
+  Color _triChipTextColorInverted(TriAnswer? val) {
+    if (val == null) return AppColors.chipGrayText;
+    switch (val) {
+      case TriAnswer.ya:
+        return AppColors.chipRedText;
+      case TriAnswer.tidak:
+        return AppColors.chipGreenText;
+      case TriAnswer.tidakTahu:
+        return AppColors.chipYellowText;
+    }
+  }
+
+  // ── Q1AddressAnswer helpers ──
+  String _q1Label(Q1AddressAnswer? val) {
+    if (val == null) return '-';
+    switch (val) {
+      case Q1AddressAnswer.ya:
+        return 'Ya';
+      case Q1AddressAnswer.hanyaAlamat:
+        return 'Hanya Alamat';
+      case Q1AddressAnswer.hanyaArea:
+        return 'Hanya Area';
+    }
+  }
+
+  Color _q1Color(Q1AddressAnswer? val) {
+    if (val == null) return AppColors.chipGray;
+    switch (val) {
+      case Q1AddressAnswer.ya:
+        return AppColors.chipGreen;
+      case Q1AddressAnswer.hanyaAlamat:
+        return AppColors.chipYellow;
+      case Q1AddressAnswer.hanyaArea:
+        return AppColors.chipRed;
+    }
+  }
+
+  Color _q1TextColor(Q1AddressAnswer? val) {
+    if (val == null) return AppColors.chipGrayText;
+    switch (val) {
+      case Q1AddressAnswer.ya:
+        return AppColors.chipGreenText;
+      case Q1AddressAnswer.hanyaAlamat:
+        return AppColors.chipYellowText;
+      case Q1AddressAnswer.hanyaArea:
+        return AppColors.chipRedText;
+    }
+  }
+
+  // ── Q7VideoAnswer helpers ──
+  String _q7Label(Q7VideoAnswer? val) {
+    if (val == null) return '-';
+    switch (val) {
+      case Q7VideoAnswer.ya:
+        return 'Ya';
+      case Q7VideoAnswer.hanyaVideoLama:
+        return 'Video Lama';
+      case Q7VideoAnswer.tidak:
+        return 'Tidak';
+    }
+  }
+
+  Color _q7Color(Q7VideoAnswer? val) {
+    if (val == null) return AppColors.chipGray;
+    switch (val) {
+      case Q7VideoAnswer.ya:
+        return AppColors.chipGreen;
+      case Q7VideoAnswer.hanyaVideoLama:
+        return AppColors.chipYellow;
+      case Q7VideoAnswer.tidak:
+        return AppColors.chipRed;
+    }
+  }
+
+  Color _q7TextColor(Q7VideoAnswer? val) {
+    if (val == null) return AppColors.chipGrayText;
+    switch (val) {
+      case Q7VideoAnswer.ya:
+        return AppColors.chipGreenText;
+      case Q7VideoAnswer.hanyaVideoLama:
+        return AppColors.chipYellowText;
+      case Q7VideoAnswer.tidak:
+        return AppColors.chipRedText;
+    }
+  }
+
+  // ── Q9PaymentAnswer helpers ──
+  String _q9Label(Q9PaymentAnswer? val) {
+    if (val == null) return '-';
+    switch (val) {
+      case Q9PaymentAnswer.jelas:
+        return 'Jelas';
+      case Q9PaymentAnswer.sebagian:
+        return 'Sebagian';
+      case Q9PaymentAnswer.tidakDijelaskan:
+        return 'Tidak Dijelaskan';
+      case Q9PaymentAnswer.belumTahap:
+        return 'Belum Tahap';
+    }
+  }
+
+  Color _q9Color(Q9PaymentAnswer? val) {
+    if (val == null) return AppColors.chipGray;
+    switch (val) {
+      case Q9PaymentAnswer.jelas:
+        return AppColors.chipGreen;
+      case Q9PaymentAnswer.sebagian:
+        return AppColors.chipYellow;
+      case Q9PaymentAnswer.tidakDijelaskan:
+        return AppColors.chipRed;
+      case Q9PaymentAnswer.belumTahap:
+        return AppColors.chipGray;
+    }
+  }
+
+  Color _q9TextColor(Q9PaymentAnswer? val) {
+    if (val == null) return AppColors.chipGrayText;
+    switch (val) {
+      case Q9PaymentAnswer.jelas:
+        return AppColors.chipGreenText;
+      case Q9PaymentAnswer.sebagian:
+        return AppColors.chipYellowText;
+      case Q9PaymentAnswer.tidakDijelaskan:
+        return AppColors.chipRedText;
+      case Q9PaymentAnswer.belumTahap:
+        return AppColors.chipGrayText;
     }
   }
 }

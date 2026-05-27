@@ -19,37 +19,36 @@ class BasicInfo with _$BasicInfo {
 
 /// Tri-state answer: yes / no / tidakTahu (don't know)
 enum TriAnswer { ya, tidak, tidakTahu }
+enum Q1AddressAnswer { ya, hanyaAlamat, hanyaArea }
+enum Q7VideoAnswer { ya, hanyaVideoLama, tidak }
+enum Q9PaymentAnswer { jelas, sebagian, tidakDijelaskan, belumTahap }
 
 @freezed
 class QuickCheck with _$QuickCheck {
   const factory QuickCheck({
-    // Foto
-    @Default(null) TriAnswer? hasPhotos,
     @Default([]) List<String> uploadedPhotoPaths,
-
-    // Alamat
-    @Default(null) TriAnswer? addressSpecific,
     @Default('') String googleMapsLink,
-
-    // Kontak
-    @Default(null) TriAnswer? knowsContactName,
     @Default('') String namaKontak,
-
-    // Rekening
-    @Default(null) TriAnswer? knowsAccountName,
     @Default('') String namaRekening,
 
-    // Video call
-    @Default(null) TriAnswer? videoCallAvailable,
-
-    // Survei
-    @Default(null) TriAnswer? surveyAllowed,
-
-    // Tekanan transfer
-    @Default(null) TriAnswer? transferPressure,
-
-    // Testimoni
-    @Default(null) TriAnswer? hasTestimony,
+    // Q1
+    @Default(null) Q1AddressAnswer? addressSpecific,
+    // Q2
+    @Default(null) TriAnswer? photoMatchLocation,
+    // Q3
+    @Default(null) TriAnswer? infoConsistent,
+    // Q4
+    @Default(null) TriAnswer? surveyOrVideoCallAllowed,
+    // Q5
+    @Default(null) TriAnswer? dpRequestedBeforeSurvey,
+    // Q6
+    @Default(null) TriAnswer? pressureToTransfer,
+    // Q7
+    @Default(null) Q7VideoAnswer? willingToProvideVideo,
+    // Q8
+    @Default(null) TriAnswer? identityConsistent,
+    // Q9
+    @Default(null) Q9PaymentAnswer? paymentDetailsClear,
   }) = _QuickCheck;
 }
 
