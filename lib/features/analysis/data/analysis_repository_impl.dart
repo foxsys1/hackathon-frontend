@@ -15,6 +15,7 @@ class AnalysisRepositoryImpl {
   Future<Map<String, dynamic>> validateListing(
     AnalysisState state, {
     UploadState? uploads,
+    String? imageUrl,
   }) async {
     final basic = state.basicInfo;
     final qc = state.quickCheck;
@@ -41,6 +42,7 @@ class AnalysisRepositoryImpl {
       'bank_account_name_match': qc.identityConsistent?.name ?? 'tidakTahu',
       'payment_details_explained': qc.paymentDetailsClear?.name ?? 'tidakTahu',
       'room_facilities': basic.fasilitas,
+      'image_url': imageUrl ?? '',
     });
 
     final chatFile = await _resolveChatFile(uploadState, dc);

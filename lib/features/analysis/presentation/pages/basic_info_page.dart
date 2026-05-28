@@ -199,6 +199,7 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final extractedImage = ref.watch(extractedImageProvider);
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
@@ -334,6 +335,29 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        if (extractedImage.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: SizedBox(
+                              height: 120,
+                              width: double.infinity,
+                              child: Image.network(
+                                extractedImage,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: AppColors.chipGray,
+                                  child: const Center(
+                                    child: Icon(Icons.broken_image,
+                                        color: AppColors.iconDefault),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+
                         if (_extractError != null) ...[
                           const SizedBox(height: 8),
                           Text(

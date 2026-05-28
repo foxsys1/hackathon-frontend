@@ -115,7 +115,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
 
       // Run API + minimum display time in parallel.
       final results = await Future.wait<dynamic>([
-        repo.validateListing(analysisState, uploads: uploads),
+        repo.validateListing(analysisState,
+            uploads: uploads, imageUrl: extractedImage),
         minDisplay,
         reviewFuture,
       ]);
@@ -173,6 +174,10 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
         areaComparison: result.areaComparison,
       );
       ref.read(historyNotifierProvider.notifier).addRecord(historyRecord);
+
+      // Clear the extracted image after persisting so it doesn't leak to
+      // subsequent analyses.
+      ref.read(extractedImageProvider.notifier).state = '';
 
       context.go('/analyze/result');
     } catch (e) {
