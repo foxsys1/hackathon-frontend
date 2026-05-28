@@ -25,7 +25,7 @@ void main() {
         fasilitas: ['AC', 'Wifi'],
       ),
       quickCheck: const QuickCheck(
-        videoCallAvailable: TriAnswer.ya,
+        surveyOrVideoCallAllowed: TriAnswer.ya,
       ),
     );
 

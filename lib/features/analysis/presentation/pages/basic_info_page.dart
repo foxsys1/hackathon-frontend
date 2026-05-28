@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/network/api_service.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/explore/data/kos_listing_dto.dart';
+import 'package:kos_gdgoc/features/analysis/data/extracted_image_provider.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
 import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_bar.dart';
 
@@ -100,11 +101,36 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
         // Merge extracted facilities into selection.
         _selectedFasilitas.addAll(dto.roomFacilities);
         _selectedFasilitas.addAll(dto.sharedFacilities);
+
         // Pre-fill sumber from URL host.
         final host = Uri.tryParse(url)?.host ?? '';
         if (_sumberCtrl.text.isEmpty && host.isNotEmpty) {
           _sumberCtrl.text = host.replaceFirst('www.', '');
         }
+
+        // Pre-fill description if available.
+        if (dto.description.isNotEmpty) {
+          _deskripsiCtrl.text = dto.description;
+        }
+
+        // Pre-fill lokasi: prefer API address, else try to format coords.
+        if (dto.address.isNotEmpty) {
+          _lokasiCtrl.text = dto.address;
+        } else if (dto.latitude != null && dto.longitude != null) {
+          _lokasiCtrl.text =
+              'Lat ${dto.latitude!.toStringAsFixed(6)}, Lng ${dto.longitude!.toStringAsFixed(6)}';
+        }
+
+        // Ensure URL field reflects the listing URL returned by the API.
+        if (_urlCtrl.text.isEmpty && dto.listingUrl.isNotEmpty) {
+          _urlCtrl.text = dto.listingUrl;
+        }
+
+        // Store extracted image URL in a shared provider so history can use it.
+        if (dto.imageUrl.isNotEmpty) {
+          ref.read(extractedImageProvider.notifier).state = dto.imageUrl;
+        }
+
         _isExtracting = false;
       });
 
@@ -342,7 +368,8 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                   TextField(
                     controller: _lokasiCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Contoh: Jl. Kaliurang KM 5, Sleman, Yogyakarta',
+                      hintText:
+                          'Contoh: Jl. Kaliurang KM 5, Sleman, Yogyakarta',
                       prefixIcon:
                           const Icon(Icons.location_on_outlined, size: 20),
                       errorText: _lokasiError,
@@ -415,7 +442,8 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                     controller: _deskripsiCtrl,
                     maxLines: 4,
                     decoration: const InputDecoration(
-                      hintText: 'Contoh: Kos nyaman dekat UGM, fasilitas lengkap, lingkungan bersih dan aman, cocok untuk mahasiswa.',
+                      hintText:
+                          'Contoh: Kos nyaman dekat UGM, fasilitas lengkap, lingkungan bersih dan aman, cocok untuk mahasiswa.',
                     ),
                   ),
                   const SizedBox(height: 24),

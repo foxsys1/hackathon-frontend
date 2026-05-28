@@ -12,6 +12,7 @@ import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
 import 'package:kos_gdgoc/features/analysis/domain/upload_state.dart';
 import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
 import 'package:kos_gdgoc/features/history/data/history_provider.dart';
+import 'package:kos_gdgoc/features/analysis/data/extracted_image_provider.dart';
 import 'package:kos_gdgoc/features/history/domain/history_record.dart';
 
 class AnalyzingPage extends ConsumerStatefulWidget {
@@ -148,6 +149,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
       // Use the backend-generated record_id when available so detail lookups work.
       final recordId =
           dto.recordId ?? DateTime.now().millisecondsSinceEpoch.toString();
+      final extractedImage = ref.read(extractedImageProvider);
+
       final historyRecord = HistoryRecord(
         id: recordId,
         namaKos: analysisState.basicInfo.namaKos.isNotEmpty
@@ -158,7 +161,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
             ? analysisState.basicInfo.hargaPerBulan
             : '-',
         sumberListing: analysisState.basicInfo.sumberListing,
-        imageUrl: '',
+        imageUrl: extractedImage ?? '',
         riskScore: result.riskScore,
         riskLevel: riskLevel,
         analysisDate: DateTime.now(),

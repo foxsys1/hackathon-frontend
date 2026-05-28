@@ -13,7 +13,6 @@ import 'package:kos_gdgoc/features/explore/presentation/pages/explore_all_review
 import 'package:kos_gdgoc/features/history/presentation/pages/history_detail_page.dart';
 import 'package:kos_gdgoc/features/history/presentation/pages/history_page.dart';
 import 'package:kos_gdgoc/features/home/presentation/pages/home_page.dart';
-import 'package:kos_gdgoc/features/home/presentation/pages/landing_page.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -31,8 +30,7 @@ GoRouter appRouter(AppRouterRef ref) {
     routes: [
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
-        builder: (context, state, child) =>
-            _ScaffoldWithNavBar(child: child),
+        builder: (context, state, child) => _ScaffoldWithNavBar(child: child),
         routes: [
           GoRoute(
             path: '/',
@@ -123,8 +121,7 @@ class _ScaffoldWithNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location =
-        GoRouterState.of(context).uri.toString();
+    final location = GoRouterState.of(context).uri.toString();
     final idx = _indexOf(location);
 
     return Scaffold(
