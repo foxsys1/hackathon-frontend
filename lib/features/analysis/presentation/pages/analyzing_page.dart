@@ -101,6 +101,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
       final uploads = ref.read(uploadStateProvider);
       final api = ref.read(apiServiceProvider);
       final repo = AnalysisRepositoryImpl(api);
+      final extractedImage = ref.read(extractedImageProvider);
 
       // Run review-summary in parallel (optional — failure is non-critical).
       final reviewTexts = ref.read(reviewTextsProvider);
@@ -115,8 +116,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
 
       // Run API + minimum display time in parallel.
       final results = await Future.wait<dynamic>([
-        repo.validateListing(analysisState,
-            uploads: uploads, imageUrl: extractedImage),
+        repo.validateListing(analysisState, uploads: uploads),
         minDisplay,
         reviewFuture,
       ]);
@@ -150,7 +150,6 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
       // Use the backend-generated record_id when available so detail lookups work.
       final recordId =
           dto.recordId ?? DateTime.now().millisecondsSinceEpoch.toString();
-      final extractedImage = ref.read(extractedImageProvider);
 
       final historyRecord = HistoryRecord(
         id: recordId,
@@ -162,7 +161,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
             ? analysisState.basicInfo.hargaPerBulan
             : '-',
         sumberListing: analysisState.basicInfo.sumberListing,
-        imageUrl: extractedImage ?? '',
+        imageUrl: extractedImage,
         riskScore: result.riskScore,
         riskLevel: riskLevel,
         analysisDate: DateTime.now(),

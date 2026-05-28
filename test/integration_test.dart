@@ -31,7 +31,7 @@ void main() {
 
     print('Calling validateListing API...');
     try {
-      final result = await repo.validateListing(state, imageUrl: null);
+      final result = await repo.validateListing(state);
       print('API Response: $result');
       expect(result, isNotNull);
       expect(result['anomaly_score'], isNotNull);

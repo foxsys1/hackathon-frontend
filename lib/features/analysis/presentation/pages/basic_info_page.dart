@@ -357,7 +357,6 @@ class _BasicInfoPageState extends ConsumerState<BasicInfoPage> {
                             ),
                           ),
                         ],
-
                         if (_extractError != null) ...[
                           const SizedBox(height: 8),
                           Text(
