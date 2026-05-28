@@ -32,7 +32,7 @@ class KosListing with _$KosListing {
     /// Distance from the user in km
     required double distanceKm,
 
-    /// AI-generated review summary text
+    /// Review summary text
     required String aiSummary,
 
     /// Full facility list used for filtering, e.g. ["K. Mandi Dalam", "AC", "Wifi"]

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kos_gdgoc/core/router/app_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
+import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
 
 void main() {
   runApp(
@@ -19,6 +20,8 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Warm the explore cache early so the first open feels instant.
+    ref.read(exploreListingsProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

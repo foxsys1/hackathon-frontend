@@ -1,5 +1,7 @@
 import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
-import 'package:geolocator/geolocator.dart';class KosListingDto {
+import 'package:geolocator/geolocator.dart';
+
+class KosListingDto {
   const KosListingDto({
     required this.id,
     required this.listingName,
@@ -82,16 +84,19 @@ import 'package:geolocator/geolocator.dart';class KosListingDto {
     final allFacilities = [...roomFacilities, ...sharedFacilities];
     final facilityTags = allFacilities.take(4).toList();
 
-    // Use a short description snippet as AI summary for the card if API doesn't provide one
-    final summarySnippet = aiSummary ?? (description.length > 120
-        ? '${description.substring(0, 120)}...'
-        : description);
+    // Use a short description snippet as the summary for the card if API doesn't provide one
+    final summarySnippet = aiSummary ??
+        (description.length > 120
+            ? '${description.substring(0, 120)}...'
+            : description);
 
     double calculatedDistance = -1.0;
-    if (userLat != null && userLng != null && latitude != null && longitude != null) {
-      final distMeters = Geolocator.distanceBetween(
-        userLat, userLng, latitude!, longitude!
-      );
+    if (userLat != null &&
+        userLng != null &&
+        latitude != null &&
+        longitude != null) {
+      final distMeters =
+          Geolocator.distanceBetween(userLat, userLng, latitude!, longitude!);
       calculatedDistance = distMeters / 1000.0;
     }
 

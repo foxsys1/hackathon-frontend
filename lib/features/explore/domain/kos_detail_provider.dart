@@ -94,7 +94,8 @@ Future<List<KosReview>> kosReviews(KosReviewsRef ref, String kosId) async {
   final api = ref.read(apiServiceProvider);
   try {
     final detail = ref.read(kosDetailProvider(kosId));
-    final fetchId = (detail?.sourceId.isNotEmpty == true) ? detail!.sourceId : kosId;
+    final fetchId =
+        (detail?.sourceId.isNotEmpty == true) ? detail!.sourceId : kosId;
     final response = await api.getKosReviews(fetchId, limit: 50);
     final reviewsData = response['reviews'] as List<dynamic>? ?? [];
     return reviewsData.map((e) {
@@ -125,7 +126,7 @@ Future<List<KosReview>> kosReviews(KosReviewsRef ref, String kosId) async {
   }
 }
 
-/// Fetches an AI-generated review summary from the backend for a given kos.
+/// Fetches a review summary from the backend for a given kos.
 /// Uses the review content strings from the local detail data.
 /// Returns null when there are no reviews or the API fails.
 @riverpod

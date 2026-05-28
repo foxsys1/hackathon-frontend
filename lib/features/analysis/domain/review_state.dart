@@ -15,13 +15,12 @@ class _ReviewTextsNotifier extends StateNotifier<List<String>> {
     if (t.isNotEmpty) state = [...state, t];
   }
 
-  void remove(String text) =>
-      state = state.where((t) => t != text).toList();
+  void remove(String text) => state = state.where((t) => t != text).toList();
 
   void clear() => state = const [];
 }
 
-/// Stores the AI review summary returned by /api/v1/review-summary.
+/// Stores the review summary returned by /api/v1/review-summary.
 final reviewSummaryProvider =
     StateNotifierProvider<_ReviewSummaryNotifier, AIReviewSummaryDto?>(
   (_) => _ReviewSummaryNotifier(),

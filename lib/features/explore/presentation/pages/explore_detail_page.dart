@@ -111,7 +111,7 @@ class ExploreDetailPage extends ConsumerWidget {
                       const SizedBox(height: 20),
                     ],
 
-                    // ── Ringkasan AI Section ──
+                    // ── Ringkasan Section ──
                     ref.watch(kosAiSummaryProvider(kosId)).when(
                           data: (summary) {
                             return _AiSummarySection(
@@ -396,7 +396,7 @@ class _KosInfoHeader extends StatelessWidget {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// AI Summary Section — Ringkasan AI
+// Summary Section — Ringkasan
 // ════════════════════════════════════════════════════════════════════
 
 class _AiSummarySection extends StatelessWidget {

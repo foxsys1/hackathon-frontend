@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'kos_detail.freezed.dart';
 
 /// Full detail model for a single Kos, extending listing data with
-/// AI summary highlights and recent reviews.
+/// summary highlights and recent reviews.
 @freezed
 class KosDetail with _$KosDetail {
   const factory KosDetail({
@@ -19,7 +19,7 @@ class KosDetail with _$KosDetail {
     required List<String> facilities,
     required List<String> facilityTags,
 
-    /// Full AI summary paragraph
+    /// Full summary paragraph
     required String aiSummary,
 
     /// Positive highlight bullet points

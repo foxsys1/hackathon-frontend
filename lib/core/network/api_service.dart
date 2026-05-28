@@ -88,7 +88,7 @@ class ApiService {
     return response.data ?? {};
   }
 
-  /// Generates an AI summary from a list of review strings.
+  /// Generates a review summary from a list of review strings.
   Future<Map<String, dynamic>> getReviewSummary(
     List<String> reviews,
   ) async {

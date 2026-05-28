@@ -97,7 +97,7 @@ class AnalysisResultPage extends ConsumerWidget {
                     _DisclaimerCard(),
                     const SizedBox(height: 20),
 
-                    // AI Review Summary (shown when user entered review texts)
+                    // Review Summary (shown when user entered review texts)
                     if (reviewSummary != null) ...[
                       _ReviewSummaryCard(summary: reviewSummary),
                       const SizedBox(height: 20),

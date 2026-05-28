@@ -6,7 +6,7 @@ import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 /// A card widget that displays a single Kos listing in the Explore feed.
 ///
 /// Matches the mockup layout: image | info + distance badge, price, rating,
-/// AI summary pill, facility chips, "Lihat Detail" link.
+/// summary pill, facility chips, "Lihat Detail" link.
 /// CORS proxy base URL – routes image requests through the proxy on Flutter Web
 /// to avoid cross-origin errors when loading images from third-party sources.
 const _corsProxy = 'https://cors-proxy-two-gules.vercel.app/?url=';
@@ -191,7 +191,7 @@ class KosCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── AI Review Summary pill ──
+          // ── Review Summary pill ──
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Container(
