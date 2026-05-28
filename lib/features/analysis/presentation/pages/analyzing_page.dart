@@ -9,6 +9,7 @@ import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/data/analysis_repository_impl.dart';
 import 'package:kos_gdgoc/features/analysis/data/models/validation_result_dto.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/analysis/domain/upload_state.dart';
 import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
 import 'package:kos_gdgoc/features/history/data/history_provider.dart';
 import 'package:kos_gdgoc/features/history/domain/history_record.dart';
@@ -96,6 +97,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
 
     try {
       final analysisState = ref.read(analysisStateNotifierProvider);
+      final uploads = ref.read(uploadStateProvider);
       final api = ref.read(apiServiceProvider);
       final repo = AnalysisRepositoryImpl(api);
 
@@ -112,7 +114,7 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
 
       // Run API + minimum display time in parallel.
       final results = await Future.wait<dynamic>([
-        repo.validateListing(analysisState),
+        repo.validateListing(analysisState, uploads: uploads),
         minDisplay,
         reviewFuture,
       ]);

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/data/models/validation_result_dto.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/analysis/domain/upload_state.dart';
 import 'package:kos_gdgoc/features/analysis/domain/review_state.dart';
 
 class AnalysisResultPage extends ConsumerWidget {
@@ -166,6 +167,7 @@ class AnalysisResultPage extends ConsumerWidget {
                     ref.read(analysisStateNotifierProvider.notifier).reset();
                     ref.read(reviewTextsProvider.notifier).clear();
                     ref.read(reviewSummaryProvider.notifier).clear();
+                    ref.read(uploadStateProvider.notifier).clearAll();
                     context.go('/');
                   },
                   child: const Text('Selesai'),

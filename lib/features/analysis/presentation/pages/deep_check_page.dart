@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/analysis/domain/upload_state.dart';
 
 import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_bar.dart';
 
@@ -43,29 +45,72 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
       type: FileType.custom,
       allowedExtensions: ['txt', 'zip'],
       allowMultiple: false,
+      withData: kIsWeb,
     );
     if (!mounted) return;
-    final path = result?.files.firstOrNull?.path;
-    if (path != null) {
+    final file = result?.files.isNotEmpty == true ? result!.files.first : null;
+    if (file == null) return;
+    if (kIsWeb && file.bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File tidak dapat dibaca di web. Coba file lain.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final item = UploadItem(
+      id: UploadItem.newId(),
+      name: file.name,
+      kind: UploadKind.chat,
+      bytes: kIsWeb ? file.bytes : null,
+      path: kIsWeb ? null : file.path,
+    );
+    ref.read(uploadStateProvider.notifier).addWhatsappChat(item);
+
+    if (!kIsWeb && file.path != null) {
       setState(() {
         _dc = _dc.copyWith(
-          whatsappChatPaths: [..._dc.whatsappChatPaths, path],
+          whatsappChatPaths: [..._dc.whatsappChatPaths, file.path!],
         );
       });
     }
   }
 
   void _pickScreenshot() async {
-    if (_dc.testimoniScreenshotPaths.length >= 5) return;
+    final uploads = ref.read(uploadStateProvider);
+    if (uploads.testimoniImages.length >= 5) return;
     final images = await _picker.pickMultiImage(imageQuality: 80);
     if (!mounted) return;
-    if (images.isNotEmpty) {
-      final remaining = 5 - _dc.testimoniScreenshotPaths.length;
+    if (images.isEmpty) return;
+
+    final remaining = 5 - uploads.testimoniImages.length;
+    final notifier = ref.read(uploadStateProvider.notifier);
+    final newPaths = <String>[];
+
+    for (final image in images.take(remaining)) {
+      final bytes = kIsWeb ? await image.readAsBytes() : null;
+      notifier.addTestimoniImage(
+        UploadItem(
+          id: UploadItem.newId(),
+          name: image.name,
+          kind: UploadKind.image,
+          bytes: bytes,
+          path: kIsWeb ? null : image.path,
+        ),
+      );
+      if (!kIsWeb && image.path.isNotEmpty) {
+        newPaths.add(image.path);
+      }
+    }
+
+    if (!kIsWeb && newPaths.isNotEmpty) {
       setState(() {
         _dc = _dc.copyWith(
           testimoniScreenshotPaths: [
             ..._dc.testimoniScreenshotPaths,
-            ...images.take(remaining).map((x) => x.path),
+            ...newPaths,
           ],
         );
       });
@@ -74,6 +119,7 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
 
   @override
   Widget build(BuildContext context) {
+    final uploads = ref.watch(uploadStateProvider);
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       appBar: AppBar(
@@ -155,18 +201,25 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
                           subtitle: '.TXT atau .ZIP — Maks. 20MB per file',
                           onTap: _pickWhatsappChat,
                         ),
-                        if (_dc.whatsappChatPaths.isNotEmpty) ...[
+                        if (uploads.whatsappChats.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           _FileChipRow(
-                            paths: _dc.whatsappChatPaths,
+                            items: uploads.whatsappChats,
                             icon: Icons.description_outlined,
-                            onRemove: (p) => setState(() {
-                              _dc = _dc.copyWith(
-                                whatsappChatPaths: _dc.whatsappChatPaths
-                                    .where((x) => x != p)
-                                    .toList(),
-                              );
-                            }),
+                            onRemove: (item) {
+                              ref
+                                  .read(uploadStateProvider.notifier)
+                                  .removeWhatsappChat(item.id);
+                              if (!kIsWeb && item.path != null) {
+                                setState(() {
+                                  _dc = _dc.copyWith(
+                                    whatsappChatPaths: _dc.whatsappChatPaths
+                                        .where((x) => x != item.path)
+                                        .toList(),
+                                  );
+                                });
+                              }
+                            },
                           ),
                         ],
                         const SizedBox(height: 12),
@@ -248,19 +301,26 @@ class _DeepCheckPageState extends ConsumerState<DeepCheckPage> {
                           subtitle: 'PNG, JPG — Maks 5 file — 20MB per file',
                           onTap: _pickScreenshot,
                         ),
-                        if (_dc.testimoniScreenshotPaths.isNotEmpty) ...[
+                        if (uploads.testimoniImages.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           _FileChipRow(
-                            paths: _dc.testimoniScreenshotPaths,
+                            items: uploads.testimoniImages,
                             isImage: true,
-                            onRemove: (p) => setState(() {
-                              _dc = _dc.copyWith(
-                                testimoniScreenshotPaths: _dc
-                                    .testimoniScreenshotPaths
-                                    .where((x) => x != p)
-                                    .toList(),
-                              );
-                            }),
+                            onRemove: (item) {
+                              ref
+                                  .read(uploadStateProvider.notifier)
+                                  .removeTestimoniImage(item.id);
+                              if (!kIsWeb && item.path != null) {
+                                setState(() {
+                                  _dc = _dc.copyWith(
+                                    testimoniScreenshotPaths: _dc
+                                        .testimoniScreenshotPaths
+                                        .where((x) => x != item.path)
+                                        .toList(),
+                                  );
+                                });
+                              }
+                            },
                           ),
                         ],
                       ],
@@ -426,14 +486,14 @@ class _UploadBox extends StatelessWidget {
 
 class _FileChipRow extends StatelessWidget {
   const _FileChipRow({
-    required this.paths,
+    required this.items,
     required this.onRemove,
     this.icon = Icons.image,
     this.isImage = false,
   });
 
-  final List<String> paths;
-  final ValueChanged<String> onRemove;
+  final List<UploadItem> items;
+  final ValueChanged<UploadItem> onRemove;
   final IconData icon;
   final bool isImage;
 
@@ -442,17 +502,24 @@ class _FileChipRow extends StatelessWidget {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
-      children: List.generate(paths.length, (i) {
-        return SizedBox(
-          width: 72,
-          height: 72,
-          child: Stack(
-            children: [
-              if (isImage)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(paths[i]),
+      children: List.generate(items.length, (i) {
+        final item = items[i];
+        final imagePreview = item.hasBytes
+            ? Image.memory(
+                item.bytes!,
+                width: 72,
+                height: 72,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 72,
+                  height: 72,
+                  color: AppColors.chipGray,
+                  child: Icon(icon, color: AppColors.iconDefault, size: 28),
+                ),
+              )
+            : (!kIsWeb && item.path != null)
+                ? Image.file(
+                    File(item.path!),
                     width: 72,
                     height: 72,
                     fit: BoxFit.cover,
@@ -462,7 +529,22 @@ class _FileChipRow extends StatelessWidget {
                       color: AppColors.chipGray,
                       child: Icon(icon, color: AppColors.iconDefault, size: 28),
                     ),
-                  ),
+                  )
+                : Container(
+                    width: 72,
+                    height: 72,
+                    color: AppColors.chipGray,
+                    child: Icon(icon, color: AppColors.iconDefault, size: 28),
+                  );
+        return SizedBox(
+          width: 72,
+          height: 72,
+          child: Stack(
+            children: [
+              if (isImage)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: imagePreview,
                 )
               else
                 Container(
@@ -480,7 +562,7 @@ class _FileChipRow extends StatelessWidget {
                 top: 2,
                 right: 2,
                 child: GestureDetector(
-                  onTap: () => onRemove(paths[i]),
+                  onTap: () => onRemove(item),
                   child: Container(
                     width: 22,
                     height: 22,
@@ -488,7 +570,8 @@ class _FileChipRow extends StatelessWidget {
                       color: AppColors.textPrimary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, color: Colors.white, size: 14),
+                    child:
+                        const Icon(Icons.close, color: Colors.white, size: 14),
                   ),
                 ),
               ),

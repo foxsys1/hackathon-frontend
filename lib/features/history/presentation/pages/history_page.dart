@@ -197,10 +197,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage> {
                             ),
                           ),
                         ),
-                        _SortDropdown(
+                        _SortToggle(
                           value: _sortBy,
-                          onChanged: (v) =>
-                              setState(() => _sortBy = v ?? _sortBy),
+                          onChanged: (v) => setState(() => _sortBy = v),
                         ),
                       ],
                     ),
@@ -386,43 +385,108 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _SortDropdown extends StatelessWidget {
-  const _SortDropdown({required this.value, required this.onChanged});
+class _SortToggle extends StatelessWidget {
+  const _SortToggle({required this.value, required this.onChanged});
 
   final String value;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isDense: true,
-          icon: const Icon(Icons.keyboard_arrow_down,
-              size: 18, color: AppColors.textSecondary),
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+    final isTerbaru = value == 'Terbaru';
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 176,
+          height: 34,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.divider),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
-          items: const [
-            DropdownMenuItem(
-              value: 'Terbaru',
-              child: Text('Urutkan: Terbaru'),
-            ),
-            DropdownMenuItem(
-              value: 'Terlama',
-              child: Text('Urutkan: Terlama'),
-            ),
-          ],
-          onChanged: onChanged,
+          child: Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                alignment:
+                    isTerbaru ? Alignment.centerLeft : Alignment.centerRight,
+                child: Container(
+                  width: 84,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SortOption(
+                      label: 'Terbaru',
+                      selected: isTerbaru,
+                      onTap: () => onChanged('Terbaru'),
+                    ),
+                  ),
+                  Expanded(
+                    child: _SortOption(
+                      label: 'Terlama',
+                      selected: !isTerbaru,
+                      onTap: () => onChanged('Terlama'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        const Icon(
+          Icons.arrow_downward_rounded,
+          size: 16,
+          color: AppColors.textSecondary,
+        ),
+      ],
+    );
+  }
+}
+
+class _SortOption extends StatelessWidget {
+  const _SortOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Center(
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+          child: Text(label),
         ),
       ),
     );

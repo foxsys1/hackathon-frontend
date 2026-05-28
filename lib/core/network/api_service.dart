@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:kos_gdgoc/core/network/dio_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -56,29 +54,19 @@ class ApiService {
   /// [images] – Optional list of room photo files.
   Future<Map<String, dynamic>> validateListing({
     String? listingData,
-    File? chatFile,
-    List<File>? images,
+    MultipartFile? chatFile,
+    List<MultipartFile>? images,
   }) async {
     final formMap = <String, dynamic>{};
 
     if (listingData != null) formMap['listing_data'] = listingData;
 
     if (chatFile != null) {
-      formMap['chat_file'] = await MultipartFile.fromFile(
-        chatFile.path,
-        filename: chatFile.path.split(Platform.pathSeparator).last,
-      );
+      formMap['chat_file'] = chatFile;
     }
 
     if (images != null && images.isNotEmpty) {
-      formMap['images'] = await Future.wait(
-        images.map(
-          (f) => MultipartFile.fromFile(
-            f.path,
-            filename: f.path.split(Platform.pathSeparator).last,
-          ),
-        ),
-      );
+      formMap['images'] = images;
     }
 
     final response = await _dio.post<Map<String, dynamic>>(

@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/analysis/domain/analysis_state.dart';
+import 'package:kos_gdgoc/features/analysis/domain/upload_state.dart';
 import 'package:kos_gdgoc/features/analysis/presentation/widgets/step_progress_bar.dart';
 
 class QuickCheckPage extends ConsumerStatefulWidget {
@@ -69,6 +71,7 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.isEditMode;
+    final uploads = ref.watch(uploadStateProvider);
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
@@ -103,7 +106,8 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   const SizedBox(height: 4),
                   const Text(
                     'Jawab pertanyaan berikut untuk membantu mengevaluasi tingkat risiko.',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style:
+                        TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 20),
 
@@ -119,40 +123,71 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   const SizedBox(height: 4),
                   const Text(
                     'Unggah bukti foto/video dari listing (maks. 5 file)',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    style:
+                        TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 12),
                   _UploadBox(
                     label: 'Pilih foto',
                     subtitle: 'PNG, JPG — Maks. 5 foto',
                     onTap: () async {
-                      if (_qc.uploadedPhotoPaths.length >= 5) return;
+                      if (uploads.quickCheckImages.length >= 5) return;
                       final images = await _picker.pickMultiImage(
                         imageQuality: 80,
                       );
-                      if (images.isNotEmpty) {
-                        final remaining = 5 - _qc.uploadedPhotoPaths.length;
+                      if (!mounted) return;
+                      if (images.isEmpty) return;
+
+                      final remaining = 5 - uploads.quickCheckImages.length;
+                      final notifier = ref.read(uploadStateProvider.notifier);
+                      final newPaths = <String>[];
+
+                      for (final image in images.take(remaining)) {
+                        final bytes = kIsWeb ? await image.readAsBytes() : null;
+                        notifier.addQuickCheckImage(
+                          UploadItem(
+                            id: UploadItem.newId(),
+                            name: image.name,
+                            kind: UploadKind.image,
+                            bytes: bytes,
+                            path: kIsWeb ? null : image.path,
+                          ),
+                        );
+                        if (!kIsWeb && image.path.isNotEmpty) {
+                          newPaths.add(image.path);
+                        }
+                      }
+
+                      if (!kIsWeb && newPaths.isNotEmpty) {
                         setState(() {
                           _qc = _qc.copyWith(
                             uploadedPhotoPaths: [
                               ..._qc.uploadedPhotoPaths,
-                              ...images.take(remaining).map((x) => x.path),
+                              ...newPaths,
                             ],
                           );
                         });
                       }
                     },
                   ),
-                  if (_qc.uploadedPhotoPaths.isNotEmpty) ...[
+                  if (uploads.quickCheckImages.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _FileChipRow(
-                      paths: _qc.uploadedPhotoPaths,
-                      onRemove: (p) => setState(() {
-                        _qc = _qc.copyWith(
-                          uploadedPhotoPaths:
-                              _qc.uploadedPhotoPaths.where((x) => x != p).toList(),
-                        );
-                      }),
+                      items: uploads.quickCheckImages,
+                      onRemove: (item) {
+                        ref
+                            .read(uploadStateProvider.notifier)
+                            .removeQuickCheckImage(item.id);
+                        if (!kIsWeb && item.path != null) {
+                          setState(() {
+                            _qc = _qc.copyWith(
+                              uploadedPhotoPaths: _qc.uploadedPhotoPaths
+                                  .where((x) => x != item.path)
+                                  .toList(),
+                            );
+                          });
+                        }
+                      },
                     ),
                   ],
                   const SizedBox(height: 24),
@@ -160,27 +195,39 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q1
                   _QuestionCard(
                     number: 1,
-                    question: 'Apakah alamat kos yang diberikan spesifik dan dapat ditelusuri melalui Google Maps atau Peta Lainnya?',
+                    question:
+                        'Apakah alamat kos yang diberikan spesifik dan dapat ditelusuri melalui Google Maps atau Peta Lainnya?',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _GenericToggle<Q1AddressAnswer>(
                           value: _qc.addressSpecific,
-                          labels: const ['Ya, spesifik & bisa di-Maps', 'Hanya alamat (tanpa Maps)', 'Hanya area (cth: dekat UGM)'],
-                          values: const [Q1AddressAnswer.ya, Q1AddressAnswer.hanyaAlamat, Q1AddressAnswer.hanyaArea],
-                          onChanged: (v) => setState(() => _qc = _qc.copyWith(addressSpecific: v)),
+                          labels: const [
+                            'Ya, spesifik & bisa di-Maps',
+                            'Hanya alamat (tanpa Maps)',
+                            'Hanya area (cth: dekat UGM)'
+                          ],
+                          values: const [
+                            Q1AddressAnswer.ya,
+                            Q1AddressAnswer.hanyaAlamat,
+                            Q1AddressAnswer.hanyaArea
+                          ],
+                          onChanged: (v) => setState(
+                              () => _qc = _qc.copyWith(addressSpecific: v)),
                         ),
                         const SizedBox(height: 16),
                         const Text(
                           'Masukkan tautan lokasi dari Google Maps (opsional)',
-                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: TextStyle(
+                              fontSize: 12, color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _mapsCtrl,
                           decoration: const InputDecoration(
                             hintText: 'Contoh: https://maps.app.goo.gl/xyzABC',
-                            prefixIcon: Icon(Icons.location_on_outlined, size: 18),
+                            prefixIcon:
+                                Icon(Icons.location_on_outlined, size: 18),
                           ),
                         ),
                       ],
@@ -191,12 +238,22 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q2
                   _QuestionCard(
                     number: 2,
-                    question: 'Apakah foto bangunan/kamar yang diberikan sesuai dengan lokasi kos? (Jika dibandingkan melalui Google Maps/ Street View/ Lokasi sekitar)',
+                    question:
+                        'Apakah foto bangunan/kamar yang diberikan sesuai dengan lokasi kos? (Jika dibandingkan melalui Google Maps/ Street View/ Lokasi sekitar)',
                     child: _GenericToggle<TriAnswer>(
                       value: _qc.photoMatchLocation,
-                      labels: const ['Ya, sesuai', 'Belum bisa dipastikan', 'Tidak sesuai'],
-                      values: const [TriAnswer.ya, TriAnswer.tidakTahu, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(photoMatchLocation: v)),
+                      labels: const [
+                        'Ya, sesuai',
+                        'Belum bisa dipastikan',
+                        'Tidak sesuai'
+                      ],
+                      values: const [
+                        TriAnswer.ya,
+                        TriAnswer.tidakTahu,
+                        TriAnswer.tidak
+                      ],
+                      onChanged: (v) => setState(
+                          () => _qc = _qc.copyWith(photoMatchLocation: v)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -204,12 +261,22 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q3
                   _QuestionCard(
                     number: 3,
-                    question: 'Apakah informasi fasilitas, harga, dan aturan kos dijelaskan secara konsisten dari awal?',
+                    question:
+                        'Apakah informasi fasilitas, harga, dan aturan kos dijelaskan secara konsisten dari awal?',
                     child: _GenericToggle<TriAnswer>(
                       value: _qc.infoConsistent,
-                      labels: const ['Ya, konsisten', 'Tidak, ada perubahan informasi', 'Tidak tahu'],
-                      values: const [TriAnswer.ya, TriAnswer.tidak, TriAnswer.tidakTahu],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(infoConsistent: v)),
+                      labels: const [
+                        'Ya, konsisten',
+                        'Tidak, ada perubahan informasi',
+                        'Tidak tahu'
+                      ],
+                      values: const [
+                        TriAnswer.ya,
+                        TriAnswer.tidak,
+                        TriAnswer.tidakTahu
+                      ],
+                      onChanged: (v) =>
+                          setState(() => _qc = _qc.copyWith(infoConsistent: v)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -217,12 +284,14 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q4
                   _QuestionCard(
                     number: 4,
-                    question: 'Apakah pengelola mengizinkan survei langsung atau video call di lokasi kos?',
+                    question:
+                        'Apakah pengelola mengizinkan survei langsung atau video call di lokasi kos?',
                     child: _GenericToggle<TriAnswer>(
                       value: _qc.surveyOrVideoCallAllowed,
                       labels: const ['Ya', 'Tidak'],
                       values: const [TriAnswer.ya, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(surveyOrVideoCallAllowed: v)),
+                      onChanged: (v) => setState(() =>
+                          _qc = _qc.copyWith(surveyOrVideoCallAllowed: v)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -230,12 +299,14 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q5
                   _QuestionCard(
                     number: 5,
-                    question: 'Jika ya, Apakah pengelola meminta untuk melakukan DP terlebih dahulu?',
+                    question:
+                        'Jika ya, Apakah pengelola meminta untuk melakukan DP terlebih dahulu?',
                     child: _GenericToggle<TriAnswer>(
                       value: _qc.dpRequestedBeforeSurvey,
                       labels: const ['Ya, diminta DP dulu', 'Tidak'],
                       values: const [TriAnswer.ya, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(dpRequestedBeforeSurvey: v)),
+                      onChanged: (v) => setState(
+                          () => _qc = _qc.copyWith(dpRequestedBeforeSurvey: v)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -243,12 +314,14 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q6
                   _QuestionCard(
                     number: 6,
-                    question: 'Apakah pengelola menekan Anda untuk segera transfer DP dengan alasan kamar hampir habis atau banyak peminat?',
+                    question:
+                        'Apakah pengelola menekan Anda untuk segera transfer DP dengan alasan kamar hampir habis atau banyak peminat?',
                     child: _GenericToggle<TriAnswer>(
                       value: _qc.pressureToTransfer,
                       labels: const ['Ya, ada tekanan', 'Tidak'],
                       values: const [TriAnswer.ya, TriAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(pressureToTransfer: v)),
+                      onChanged: (v) => setState(
+                          () => _qc = _qc.copyWith(pressureToTransfer: v)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -256,12 +329,22 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q7
                   _QuestionCard(
                     number: 7,
-                    question: 'Apakah pengelola bersedia mengirim video terbaru sesuai permintaan?',
+                    question:
+                        'Apakah pengelola bersedia mengirim video terbaru sesuai permintaan?',
                     child: _GenericToggle<Q7VideoAnswer>(
                       value: _qc.willingToProvideVideo,
-                      labels: const ['Ya, bersedia', 'Hanya video lama', 'Tidak bersedia'],
-                      values: const [Q7VideoAnswer.ya, Q7VideoAnswer.hanyaVideoLama, Q7VideoAnswer.tidak],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(willingToProvideVideo: v)),
+                      labels: const [
+                        'Ya, bersedia',
+                        'Hanya video lama',
+                        'Tidak bersedia'
+                      ],
+                      values: const [
+                        Q7VideoAnswer.ya,
+                        Q7VideoAnswer.hanyaVideoLama,
+                        Q7VideoAnswer.tidak
+                      ],
+                      onChanged: (v) => setState(
+                          () => _qc = _qc.copyWith(willingToProvideVideo: v)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -269,15 +352,25 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q8
                   _QuestionCard(
                     number: 8,
-                    question: 'Apakah nomor WhatsApp atau kontak pengelola menggunakan identitas yang konsisten dengan nama yang tertera pada rekening?',
+                    question:
+                        'Apakah nomor WhatsApp atau kontak pengelola menggunakan identitas yang konsisten dengan nama yang tertera pada rekening?',
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _GenericToggle<TriAnswer>(
                           value: _qc.identityConsistent,
-                          labels: const ['Ya, konsisten', 'Tidak konsisten', 'Tidak tahu / belum bisa dipastikan'],
-                          values: const [TriAnswer.ya, TriAnswer.tidak, TriAnswer.tidakTahu],
-                          onChanged: (v) => setState(() => _qc = _qc.copyWith(identityConsistent: v)),
+                          labels: const [
+                            'Ya, konsisten',
+                            'Tidak konsisten',
+                            'Tidak tahu / belum bisa dipastikan'
+                          ],
+                          values: const [
+                            TriAnswer.ya,
+                            TriAnswer.tidak,
+                            TriAnswer.tidakTahu
+                          ],
+                          onChanged: (v) => setState(
+                              () => _qc = _qc.copyWith(identityConsistent: v)),
                         ),
                         if (_qc.identityConsistent == TriAnswer.ya) ...[
                           const SizedBox(height: 16),
@@ -297,7 +390,8 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                             controller: _rekeningCtrl,
                             decoration: const InputDecoration(
                               hintText: 'Contoh: Siti Rahayu',
-                              prefixIcon: Icon(Icons.account_balance_outlined, size: 18),
+                              prefixIcon: Icon(Icons.account_balance_outlined,
+                                  size: 18),
                             ),
                           ),
                         ],
@@ -309,12 +403,24 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
                   // Q9
                   _QuestionCard(
                     number: 9,
-                    question: 'Apakah pengelola menjelaskan rincian pembayaran sebelum meminta transfer?',
+                    question:
+                        'Apakah pengelola menjelaskan rincian pembayaran sebelum meminta transfer?',
                     child: _GenericToggle<Q9PaymentAnswer>(
                       value: _qc.paymentDetailsClear,
-                      labels: const ['Ya, jelas lengkap', 'Sebagian dijelaskan', 'Tidak dijelaskan, hanya diminta transfer', 'Belum sampai tahap pembayaran'],
-                      values: const [Q9PaymentAnswer.jelas, Q9PaymentAnswer.sebagian, Q9PaymentAnswer.tidakDijelaskan, Q9PaymentAnswer.belumTahap],
-                      onChanged: (v) => setState(() => _qc = _qc.copyWith(paymentDetailsClear: v)),
+                      labels: const [
+                        'Ya, jelas lengkap',
+                        'Sebagian dijelaskan',
+                        'Tidak dijelaskan, hanya diminta transfer',
+                        'Belum sampai tahap pembayaran'
+                      ],
+                      values: const [
+                        Q9PaymentAnswer.jelas,
+                        Q9PaymentAnswer.sebagian,
+                        Q9PaymentAnswer.tidakDijelaskan,
+                        Q9PaymentAnswer.belumTahap
+                      ],
+                      onChanged: (v) => setState(
+                          () => _qc = _qc.copyWith(paymentDetailsClear: v)),
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -397,7 +503,6 @@ class _QuickCheckPageState extends ConsumerState<QuickCheckPage> {
         ),
       );
 }
-
 
 class _QuestionCard extends StatelessWidget {
   const _QuestionCard({
@@ -526,9 +631,8 @@ class _GenericToggle<T> extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: selected ? Colors.white : Colors.transparent,
                       border: Border.all(
-                        color: selected
-                            ? Colors.white
-                            : const Color(0xFFCBD5E1),
+                        color:
+                            selected ? Colors.white : const Color(0xFFCBD5E1),
                         width: 1.5,
                       ),
                     ),
@@ -550,9 +654,8 @@ class _GenericToggle<T> extends StatelessWidget {
                         fontSize: 13.5,
                         fontWeight:
                             selected ? FontWeight.w600 : FontWeight.w400,
-                        color: selected
-                            ? Colors.white
-                            : const Color(0xFF374151),
+                        color:
+                            selected ? Colors.white : const Color(0xFF374151),
                         letterSpacing: 0.0,
                         height: 1.3,
                       ),
@@ -593,7 +696,8 @@ class _UploadBox extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 28),
+            Icon(Icons.cloud_upload_outlined,
+                color: AppColors.primary, size: 28),
             const SizedBox(height: 8),
             Text(
               label,
@@ -606,7 +710,8 @@ class _UploadBox extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              style:
+                  const TextStyle(fontSize: 11, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -616,10 +721,10 @@ class _UploadBox extends StatelessWidget {
 }
 
 class _FileChipRow extends StatelessWidget {
-  const _FileChipRow({required this.paths, required this.onRemove});
+  const _FileChipRow({required this.items, required this.onRemove});
 
-  final List<String> paths;
-  final ValueChanged<String> onRemove;
+  final List<UploadItem> items;
+  final ValueChanged<UploadItem> onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -627,15 +732,13 @@ class _FileChipRow extends StatelessWidget {
       height: 72,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: paths.length,
+        itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (_, i) {
-          return Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(paths[i]),
+          final item = items[i];
+          final preview = item.hasBytes
+              ? Image.memory(
+                  item.bytes!,
                   width: 72,
                   height: 72,
                   fit: BoxFit.cover,
@@ -643,15 +746,51 @@ class _FileChipRow extends StatelessWidget {
                     width: 72,
                     height: 72,
                     color: AppColors.chipGray,
-                    child: const Icon(Icons.image, color: AppColors.iconDefault, size: 28),
+                    child: const Icon(
+                      Icons.image,
+                      color: AppColors.iconDefault,
+                      size: 28,
+                    ),
                   ),
-                ),
+                )
+              : (!kIsWeb && item.path != null)
+                  ? Image.file(
+                      File(item.path!),
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 72,
+                        height: 72,
+                        color: AppColors.chipGray,
+                        child: const Icon(
+                          Icons.image,
+                          color: AppColors.iconDefault,
+                          size: 28,
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 72,
+                      height: 72,
+                      color: AppColors.chipGray,
+                      child: const Icon(
+                        Icons.image,
+                        color: AppColors.iconDefault,
+                        size: 28,
+                      ),
+                    );
+          return Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: preview,
               ),
               Positioned(
                 top: 2,
                 right: 2,
                 child: GestureDetector(
-                  onTap: () => onRemove(paths[i]),
+                  onTap: () => onRemove(item),
                   child: Container(
                     width: 22,
                     height: 22,
@@ -659,7 +798,8 @@ class _FileChipRow extends StatelessWidget {
                       color: AppColors.textPrimary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, color: Colors.white, size: 14),
+                    child:
+                        const Icon(Icons.close, color: Colors.white, size: 14),
                   ),
                 ),
               ),
