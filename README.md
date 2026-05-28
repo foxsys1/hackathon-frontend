@@ -12,6 +12,8 @@ KosCheck is a mobile-first Flutter application built for GDGoC Hackathon. It hel
   4. **Overview** — Review all inputs before submission; edit-in-place supported
 - **Analyzing** — Animated loading screen simulating backend analysis with step-by-step status
 - **Hasil Analisis** — Risk score (0–100), risk label, red flags, recommendations, area price comparison, and chat templates
+- **Eksplor Kos** — Browse listings with search, filters, sorting, and location toggle
+- **Detail Kos** — Listing detail, facilities, AI summary, and reviews with source link
 - **Riwayat** — Searchable and sortable history list with activity summary (total, rendah, sedang, tinggi)
 - **Riwayat Detail** — Full detail view for each past analysis record
 
@@ -19,11 +21,15 @@ KosCheck is a mobile-first Flutter application built for GDGoC Hackathon. It hel
 
 | Layer            | Technology                                        |
 | ---------------- | ------------------------------------------------- |
-| Framework        | Flutter 3.x                                       |
+| Framework        | Flutter 3.x (Dart 3.3+)                           |
 | State Management | flutter_riverpod + riverpod_annotation (code-gen) |
 | Routing          | go_router                                         |
 | Data Models      | freezed + json_serializable                       |
 | Networking       | dio                                               |
+| Local Storage    | shared_preferences                                |
+| Media & Files    | image_picker + file_picker                        |
+| Location         | geolocator                                        |
+| External Links   | url_launcher                                      |
 | SVG Rendering    | flutter_svg                                       |
 | Dev Preview      | device_preview                                    |
 
@@ -53,24 +59,32 @@ lib/
       data/        — Mock history data (12 records)
       presentation/
         pages/     — HistoryPage, HistoryDetailPage
+    explore/
+      domain/      — Kos listing models, filter state
+      data/        — Listing data + location providers
+      presentation/
+        pages/     — ExplorePage, ExploreDetailPage, ExploreAllReviewsPage
+        widgets/   — Listing cards, filter sheet
 ```
 
 ## Routes
 
-| Path                  | Page                       |
-| --------------------- | -------------------------- |
-| `/`                   | HomePage                   |
-| `/history`            | HistoryPage                |
-| `/history/:id`        | HistoryDetailPage          |
-| `/education`          | LandingPage                |
-| `/analyze`            | BasicInfoPage              |
-| `/analyze/quick`      | QuickCheckPage             |
-| `/analyze/quick-edit` | QuickCheckPage (edit mode) |
-| `/analyze/deep`       | DeepCheckPage              |
-| `/analyze/overview`   | OverviewPage               |
-| `/analyze/loading`    | AnalyzingPage              |
-| `/analyze/result`     | AnalysisResultPage         |
-| `/analyze/chat`       | ChatTemplatePage           |
+| Path                   | Page                       |
+| ---------------------- | -------------------------- |
+| `/`                    | HomePage                   |
+| `/explore`             | ExplorePage                |
+| `/explore/:id`         | ExploreDetailPage          |
+| `/explore/:id/reviews` | ExploreAllReviewsPage      |
+| `/history`             | HistoryPage                |
+| `/history/:id`         | HistoryDetailPage          |
+| `/analyze`             | BasicInfoPage              |
+| `/analyze/quick`       | QuickCheckPage             |
+| `/analyze/quick-edit`  | QuickCheckPage (edit mode) |
+| `/analyze/deep`        | DeepCheckPage              |
+| `/analyze/overview`    | OverviewPage               |
+| `/analyze/loading`     | AnalyzingPage              |
+| `/analyze/result`      | AnalysisResultPage         |
+| `/analyze/chat`        | ChatTemplatePage           |
 
 ## Getting Started
 
