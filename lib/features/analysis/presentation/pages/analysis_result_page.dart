@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -973,6 +974,60 @@ class _ReviewSummaryCard extends StatelessWidget {
                     ),
                   )
                   .toList(),
+            ),
+          ],
+          if (summary.sentimentScores.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'Sentiment Radar',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: RadarChart(
+                RadarChartData(
+                  radarTouchData: RadarTouchData(enabled: false),
+                  dataSets: [
+                    RadarDataSet(
+                      fillColor: AppColors.primary.withOpacity(0.2),
+                      borderColor: AppColors.primary,
+                      entryRadius: 3,
+                      dataEntries: summary.sentimentScores.values
+                          .map((score) => RadarEntry(value: score.toDouble()))
+                          .toList(),
+                      borderWidth: 2,
+                    ),
+                  ],
+                  radarBackgroundColor: Colors.transparent,
+                  borderData: FlBorderData(show: false),
+                  radarBorderData: const BorderSide(color: AppColors.divider),
+                  titlePositionPercentageOffset: 0.2,
+                  titleTextStyle: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 10),
+                  getTitle: (index, angle) {
+                    final keys = summary.sentimentScores.keys.toList();
+                    if (index >= 0 && index < keys.length) {
+                      final key = keys[index];
+                      return RadarChartTitle(
+                        text: key[0].toUpperCase() + key.substring(1),
+                      );
+                    }
+                    return const RadarChartTitle(text: '');
+                  },
+                  tickCount: 5,
+                  ticksTextStyle:
+                      const TextStyle(color: Colors.transparent, fontSize: 10),
+                  tickBorderData: const BorderSide(color: AppColors.divider),
+                  gridBorderData: const BorderSide(color: AppColors.divider, width: 1),
+                ),
+                swapAnimationDuration: const Duration(milliseconds: 150),
+                swapAnimationCurve: Curves.linear,
+              ),
             ),
           ],
         ],

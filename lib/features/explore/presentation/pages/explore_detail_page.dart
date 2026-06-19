@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_detail.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_detail_provider.dart';
+import 'package:kos_gdgoc/features/explore/presentation/widgets/add_review_sheet.dart';
+import 'package:kos_gdgoc/features/explore/presentation/widgets/scam_analysis_dialog.dart';
 
 class ExploreDetailPage extends ConsumerWidget {
   const ExploreDetailPage({super.key, required this.kosId});
@@ -132,6 +134,37 @@ class ExploreDetailPage extends ConsumerWidget {
                         ),
                     const SizedBox(height: 20),
 
+                    // ── Scam Analysis Button ──
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => ScamAnalysisDialog(kosId: kosId, detail: detail),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.red.shade700,
+                          minimumSize: const Size(double.infinity, 52),
+                          side: BorderSide(color: Colors.red.shade200, width: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.shield_outlined),
+                        label: const Text(
+                          'Analyze for Scam',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // ── Review Terbaru ──
                     _RecentReviewSection(
                       kosId: kosId,
@@ -166,6 +199,42 @@ class ExploreDetailPage extends ConsumerWidget {
                             SizedBox(width: 8),
                             Icon(Icons.arrow_forward, size: 18),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Tulis Review Anti-Scam ──
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => AddReviewSheet(
+                              kosId: kosId,
+                              kosLat: detail.latitude ?? 0.0,
+                              kosLon: detail.longitude ?? 0.0,
+                            ),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          minimumSize: const Size(double.infinity, 52),
+                          side: const BorderSide(color: AppColors.primary, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.rate_review_outlined),
+                        label: const Text(
+                          'Tulis Review (Anti-Scam)',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),

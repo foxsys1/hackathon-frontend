@@ -445,12 +445,14 @@ class AIReviewSummaryDto {
     required this.positiveHighlights,
     required this.negativeHighlights,
     required this.topicTags,
+    required this.sentimentScores,
   });
 
   final String shortSummary;
   final List<String> positiveHighlights;
   final List<String> negativeHighlights;
   final List<String> topicTags;
+  final Map<String, int> sentimentScores;
 
   factory AIReviewSummaryDto.fromJson(Map<String, dynamic> json) {
     return AIReviewSummaryDto(
@@ -464,6 +466,8 @@ class AIReviewSummaryDto {
       topicTags: (json['topic_tags'] as List<dynamic>? ?? [])
           .map((e) => e.toString())
           .toList(),
+      sentimentScores: (json['sentiment_scores'] as Map<String, dynamic>? ?? {})
+          .map((key, value) => MapEntry(key, (value as num).toInt())),
     );
   }
 }

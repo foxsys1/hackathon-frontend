@@ -123,6 +123,52 @@ class ApiService {
     return response.data ?? {};
   }
 
+  /// Uploads a new review with GPS metadata to verify location
+  Future<Map<String, dynamic>> addReview({
+    required String kosId,
+    required String comment,
+    required double userLat,
+    required double userLon,
+    required double kosLat,
+    required double kosLon,
+    required MultipartFile photo,
+  }) async {
+    final formData = FormData.fromMap({
+      'kos_id': kosId,
+      'comment': comment,
+      'user_lat': userLat,
+      'user_lon': userLon,
+      'kos_lat': kosLat,
+      'kos_lon': kosLon,
+      'photo': photo,
+    });
+
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/add-review',
+      data: formData,
+    );
+    return response.data ?? {};
+  }
+
+  /// Analyzes reviews to detect scam using AI cross-examination
+  Future<Map<String, dynamic>> analyzeReviews({
+    required String kosId,
+    required List<String> facilities,
+    required int price,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/analyze-reviews',
+      data: {
+        'kos_id': kosId,
+        'claims': {
+          'fasilitas': facilities,
+          'harga': price,
+        }
+      },
+    );
+    return response.data ?? {};
+  }
+
   Future<bool> healthCheck() async {
     try {
       final response = await _dio.get<dynamic>('/health');
