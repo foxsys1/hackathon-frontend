@@ -41,6 +41,7 @@ dependencies:
   # Interactive Map
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  exif: ^3.3.0
 
 dev_dependencies:
   flutter_test:

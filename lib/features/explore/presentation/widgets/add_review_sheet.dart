@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:exif/exif.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +29,35 @@ class _AddReviewSheetState extends ConsumerState<AddReviewSheet> {
   XFile? _selectedXFile;
   Uint8List? _selectedImageBytes;
   bool _isLoading = false;
+  double? _photoLat;
+  double? _photoLon;
+
+  double? _parseExifGps(IfdTag? tag, IfdTag? refTag) {
+    if (tag == null || tag.values.length < 3) return null;
+    try {
+      final values = tag.values.toList();
+      double extractDouble(dynamic val) {
+        try {
+          return val.numerator / val.denominator;
+        } catch (_) {
+          return double.parse(val.toString());
+        }
+      }
+      final d = extractDouble(values[0]);
+      final m = extractDouble(values[1]);
+      final s = extractDouble(values[2]);
+      double decimal = d + (m / 60.0) + (s / 3600.0);
+      if (refTag != null) {
+        final ref = refTag.printable;
+        if (ref == 'S' || ref == 'W') {
+          decimal = -decimal;
+        }
+      }
+      return decimal;
+    } catch (e) {
+      return null;
+    }
+  }
 
   @override
   void dispose() {
@@ -40,9 +70,48 @@ class _AddReviewSheetState extends ConsumerState<AddReviewSheet> {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
       final bytes = await picked.readAsBytes();
+
+      // Cek metadata EXIF GPS
+      final tags = await readExifFromBytes(bytes);
+      final hasGps = tags.containsKey('GPS GPSLatitude') && tags.containsKey('GPS GPSLongitude');
+
+      if (!hasGps) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto ini tidak memiliki lokasi. Mohon gunakan foto asli jepretan kamera, bukan dari WhatsApp/Internet.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final latTag = tags['GPS GPSLatitude'];
+      final latRef = tags['GPS GPSLatitudeRef'];
+      final lonTag = tags['GPS GPSLongitude'];
+      final lonRef = tags['GPS GPSLongitudeRef'];
+
+      final photoLat = _parseExifGps(latTag, latRef);
+      final photoLon = _parseExifGps(lonTag, lonRef);
+
+      if (photoLat == null || photoLon == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Format lokasi foto tidak terbaca.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _selectedXFile = picked;
         _selectedImageBytes = bytes;
+        _photoLat = photoLat;
+        _photoLon = photoLon;
       });
     }
   }
@@ -90,6 +159,29 @@ class _AddReviewSheetState extends ConsumerState<AddReviewSheet> {
           accuracy: LocationAccuracy.high,
         ),
       );
+
+      if (_photoLat != null && _photoLon != null) {
+        final distance = Geolocator.distanceBetween(
+          _photoLat!,
+          _photoLon!,
+          position.latitude,
+          position.longitude,
+        );
+
+        // Margin of error: 150 meters (mitigasi manipulasi exif / fake location)
+        if (distance > 150) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Lokasi foto terlalu jauh dari lokasimu saat ini (> ${distance.toStringAsFixed(0)} m). Pastikan kamu benar-benar berada di lokasi kos!'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            setState(() => _isLoading = false);
+          }
+          return;
+        }
+      }
 
       final apiService = ref.read(apiServiceProvider);
       final bytes = await _selectedXFile!.readAsBytes();
@@ -214,7 +306,7 @@ class _AddReviewSheetState extends ConsumerState<AddReviewSheet> {
                   SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Pastikan foto memiliki metadata GPS (EXIF) agar review dapat diverifikasi lokasinya secara otomatis.',
+                      'Pastikan kamu mengunggah foto asli dari kamera HP kamu (bukan foto yang dikirim dari WhatsApp atau internet) agar kami bisa memverifikasi lokasinya.',
                       style: TextStyle(
                         fontSize: 11,
                         color: Color(0xFFE65100),
@@ -320,7 +412,7 @@ class _AddReviewSheetState extends ConsumerState<AddReviewSheet> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Foto harus memiliki data GPS',
+                            'Gunakan foto asli tanpa editan',
                             style: TextStyle(
                               color: Colors.grey.shade400,
                               fontSize: 11,
