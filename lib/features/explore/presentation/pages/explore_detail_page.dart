@@ -1285,19 +1285,72 @@ class ReviewCard extends StatelessWidget {
                           ? photo.small
                           : photo.large;
                   if (url.isEmpty) return const SizedBox.shrink();
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      kIsWeb ? '$_corsProxy${Uri.encodeComponent(url)}' : url,
-                      width: 90,
-                      height: 90,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                  final finalUrl = kIsWeb ? '$_corsProxy${Uri.encodeComponent(url)}' : url;
+                  return GestureDetector(
+                    onTap: () {
+                      showGeneralDialog(
+                        context: context,
+                        barrierDismissible: true,
+                        barrierLabel: 'Close',
+                        barrierColor: Colors.black.withValues(alpha: 0.9),
+                        transitionDuration: const Duration(milliseconds: 300),
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          return SafeArea(
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: InteractiveViewer(
+                                    panEnabled: true,
+                                    minScale: 0.5,
+                                    maxScale: 4.0,
+                                    child: Image.network(
+                                      finalUrl,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 16,
+                                  right: 16,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                                      onPressed: () => Navigator.of(context).pop(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        transitionBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: ScaleTransition(
+                              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                              ),
+                              child: child,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        finalUrl,
                         width: 90,
                         height: 90,
-                        color: AppColors.chipGray,
-                        child: const Icon(Icons.broken_image_outlined,
-                            color: AppColors.iconDefault, size: 28),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 90,
+                          height: 90,
+                          color: AppColors.chipGray,
+                          child: const Icon(Icons.broken_image_outlined,
+                              color: AppColors.iconDefault, size: 28),
+                        ),
                       ),
                     ),
                   );
