@@ -230,7 +230,7 @@ class ExploreDetailPage extends ConsumerWidget {
                         ),
                         icon: const Icon(Icons.rate_review_outlined),
                         label: const Text(
-                          'Tulis Review (Anti-Scam)',
+                          'Tulis Review (Sertakan Bukti)',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,

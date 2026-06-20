@@ -1,73 +1,82 @@
-# KosCheck — Frontend
+<div align="center">
+  <img src="assets/icons/koscheck_logo.svg" height="80" alt="KosCheck Logo" />
+  <h1>KosCheck</h1>
+  <p><b>Your Smart Shield Against Rental Fraud</b></p>
+</div>
 
-KosCheck is a mobile-first Flutter application built for GDGoC Hackathon. It helps prospective boarding house (kos) renters assess the risk level of a listing before paying a deposit (DP), reducing the chances of rental fraud.
+---
 
-## Features
+**KosCheck** is a mobile-first Flutter application designed for the GDGoC Hackathon. It helps prospective boarding house (*kos*) renters evaluate the risk level of a listing *before* paying a deposit (DP). By analyzing multiple data points, KosCheck dramatically reduces the chances of falling victim to rental fraud.
 
-- **Beranda (Home)** — Hero section with house background illustration and quick access to start analysis
-- **Analisis Risiko** — 4-step guided flow:
-  1. **Informasi Dasar** — Fill in kos name, location, price, source listing, and facilities
-  2. **Quick Check** — Answer 7 verification indicator questions (tri-state: Ya / Tidak / Tidak Tahu) with optional photo/video uploads
-  3. **Deep Check** _(optional)_ — Upload WhatsApp chat export and testimoni screenshots for deeper analysis
-  4. **Overview** — Review all inputs before submission; edit-in-place supported
-- **Analyzing** — Animated loading screen simulating backend analysis with step-by-step status
-- **Hasil Analisis** — Risk score (0–100), risk label, red flags, recommendations, area price comparison, and chat templates
-- **Eksplor Kos** — Browse listings with search, filters, sorting, and location toggle
-- **Detail Kos** — Listing detail, facilities, AI summary, and reviews with source link
-- **Riwayat** — Searchable and sortable history list with activity summary (total, rendah, sedang, tinggi)
-- **Riwayat Detail** — Full detail view for each past analysis record
+## ✨ Why KosCheck?
 
-## Tech Stack
+Finding a safe *kos* shouldn't be a gamble. KosCheck provides an intuitive, step-by-step risk assessment flow that analyzes everything from basic listing details to complex communication patterns. 
+
+## 🚀 Key Features
+
+### 🔍 AI-Powered Risk Assessment (Analisis Risiko)
+Our core engine evaluates a listing through a comprehensive 4-step flow:
+1. **Basic Information:** Enter essential details like *kos* name, location, price, listing source, and facilities.
+2. **Quick Check:** Answer 7 rapid-fire verification questions with optional photo/video evidence.
+3. **Deep Check:** Take the analysis to the next level by uploading WhatsApp chat exports and review screenshots.
+4. **Smart Overview:** Review and edit your inputs seamlessly before processing.
+
+### 📊 Comprehensive Analysis Results
+Once processed through our animated **Analyzing** screen, you receive an in-depth report:
+- **Risk & Confidence Scores:** Clear metrics (0-100) indicating the listing's safety and the system's confidence in the result.
+- **Red Flag Detection:** Instant identification of suspicious elements.
+- **Visual & Communication Analysis:** Deep insights derived from uploaded media and chat transcripts to spot manipulative or inconsistent behavior.
+- **Area Price Comparison:** Verify if the requested rent aligns with the neighborhood average.
+- **Actionable Recommendations & Smart Chat Templates:** Get tailored advice and pre-written messages to safely communicate with the landlord.
+
+### 🏘️ Explore & Discover (Eksplor Kos)
+- Browse verified listings with advanced search, filtering, and sorting capabilities.
+- Toggle location settings to find the best options near you.
+- **Detail View:** Access comprehensive facility lists, AI-generated listing summaries, and source-linked reviews.
+
+### 📋 History & Tracking (Riwayat)
+- Keep track of all your past assessments.
+- Searchable and sortable history with a high-level summary of risk levels (Low, Medium, High).
+- Dive into full detail views for any past record.
+
+## 🛠️ Tech Stack
+
+We built KosCheck using modern, scalable, and robust technologies:
 
 | Layer            | Technology                                        |
 | ---------------- | ------------------------------------------------- |
-| Framework        | Flutter 3.x (Dart 3.3+)                           |
-| State Management | flutter_riverpod + riverpod_annotation (code-gen) |
-| Routing          | go_router                                         |
-| Data Models      | freezed + json_serializable                       |
-| Networking       | dio                                               |
-| Local Storage    | shared_preferences                                |
-| Media & Files    | image_picker + file_picker                        |
-| Location         | geolocator                                        |
-| External Links   | url_launcher                                      |
-| SVG Rendering    | flutter_svg                                       |
-| Dev Preview      | device_preview                                    |
+| **Framework**        | Flutter 3.x (Dart 3.3+)                           |
+| **State Management** | `flutter_riverpod` + `riverpod_annotation`        |
+| **Routing**          | `go_router` (ShellRoute + Bottom Navigation)      |
+| **Data Models**      | `freezed` + `json_serializable`                   |
+| **Networking**       | `dio`                                             |
+| **Local Storage**    | `shared_preferences`                              |
+| **Media & Files**    | `image_picker` + `file_picker`                    |
+| **Location**         | `geolocator`                                      |
+| **Data Viz**         | `fl_chart`                                        |
 
-## Architecture
+## 🏗️ Architecture
 
-Feature-driven folder structure:
+KosCheck follows a clean, feature-driven folder structure for optimal maintainability:
 
-```
+```text
 lib/
   core/
-    constants/     — AppConstants (base URL, app name)
-    network/       — Dio client provider
-    router/        — GoRouter with ShellRoute + bottom nav
-    theme/         — AppColors, AppTheme (light/dark)
+    constants/     — App constants (base URLs, config)
+    network/       — Dio client configuration
+    router/        — GoRouter implementation
+    theme/         — App colors and theming (light/dark)
   features/
-    home/          — HomePage (hero + info cards)
-    analysis/
-      domain/      — AnalysisState (Freezed), AnalysisStateNotifier
-      data/        — Repository impl (stub)
-      presentation/
-        pages/     — BasicInfoPage, QuickCheckPage, DeepCheckPage,
-                      OverviewPage, AnalyzingPage, AnalysisResultPage,
-                      ChatTemplatePage
-        widgets/   — StepProgressBar
-    history/
-      domain/      — HistoryRecord model, RiskLevel enum
-      data/        — Mock history data (12 records)
-      presentation/
-        pages/     — HistoryPage, HistoryDetailPage
-    explore/
-      domain/      — Kos listing models, filter state
-      data/        — Listing data + location providers
-      presentation/
-        pages/     — ExplorePage, ExploreDetailPage, ExploreAllReviewsPage
-        widgets/   — Listing cards, filter sheet
+    home/          — Hero section, info cards, quick access
+    analysis/      — The core risk assessment engine
+      domain/      — Models, Freezed states, Notifiers
+      data/        — Repositories and DTOs
+      presentation/— 7+ specialized pages for the assessment flow
+    history/       — Assessment tracking
+    explore/       — Listing discovery and AI summaries
 ```
 
-## Routes
+## 🗺️ Routing
 
 | Path                   | Page                       |
 | ---------------------- | -------------------------- |
@@ -86,29 +95,27 @@ lib/
 | `/analyze/result`      | AnalysisResultPage         |
 | `/analyze/chat`        | ChatTemplatePage           |
 
-## Getting Started
+## 🏁 Getting Started
 
-1. **Install Flutter** — [flutter.dev](https://flutter.dev/docs/get-started/install)
+Ready to run KosCheck locally? Follow these steps:
 
-2. **Get dependencies**
-
+1. **Install Flutter:** Head over to [flutter.dev](https://flutter.dev/docs/get-started/install) if you haven't already.
+2. **Fetch Dependencies:**
    ```bash
    flutter pub get
    ```
-
-3. **Run code generation** (required for Riverpod + Freezed)
-
+3. **Generate Code:** (Crucial for Riverpod & Freezed)
    ```bash
    dart run build_runner build --delete-conflicting-outputs
    ```
-
-4. **Run the app**
+4. **Run the App:**
    ```bash
-   flutter run -d chrome   # web
-   flutter run              # connected device
+   flutter run -d chrome   # For web preview
+   # OR
+   flutter run             # For connected device/emulator
    ```
 
-## Assets
+## 🎨 Assets
 
 | File                             | Description                        |
 | -------------------------------- | ---------------------------------- |
@@ -116,5 +123,4 @@ lib/
 | `assets/icons/koscheck_logo.svg` | KosCheck wordmark logo             |
 
 ---
-
-made by yazid
+*Made with ❤️ by yazid*
