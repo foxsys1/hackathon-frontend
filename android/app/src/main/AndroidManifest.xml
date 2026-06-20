@@ -1,4 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+// Source - https://stackoverflow.com/a/75658212
+// Posted by Yash Raj Mani, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-06-20, License - CC BY-SA 4.0
+
+<uses-permission android:name="android.permission.INTERNET"/>
+
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <application
         android:label="kos_gdgoc"
         android:name="${applicationName}"

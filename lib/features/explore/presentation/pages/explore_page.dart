@@ -7,7 +7,10 @@ import 'package:kos_gdgoc/core/theme/app_theme.dart';
 import 'package:kos_gdgoc/features/explore/data/discover_provider.dart';
 import 'package:kos_gdgoc/features/explore/data/location_provider.dart';
 import 'package:kos_gdgoc/features/explore/domain/explore_filter_state.dart';
+import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/explore_filter_sheet.dart';
+import 'package:kos_gdgoc/features/explore/presentation/widgets/interactive_map_selector.dart';
+import 'package:kos_gdgoc/core/presentation/widgets/web3_button.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/kos_card.dart';
 
 class ExplorePage extends ConsumerStatefulWidget {
@@ -19,8 +22,8 @@ class ExplorePage extends ConsumerStatefulWidget {
 
 class _ExplorePageState extends ConsumerState<ExplorePage> {
   final _scrollController = ScrollController();
-  final _searchCtrl = TextEditingController();
-  Timer? _debounce;
+  final _nameSearchCtrl = TextEditingController();
+  bool _isAreaSelectorOpen = false;
 
   @override
   void initState() {
@@ -32,12 +35,10 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _searchCtrl.dispose();
-    _debounce?.cancel();
+    _nameSearchCtrl.dispose();
     super.dispose();
   }
 
-  /// When the user scrolls within 300 px of the bottom, reveal the next item.
   void _onScroll() {
     final pos = _scrollController.position;
     if (pos.pixels >= pos.maxScrollExtent - 300) {
@@ -45,30 +46,15 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
     }
   }
 
-  /// Debounce search: update local text filter immediately, then trigger
-  /// an API area-search after 800 ms of silence.
-  void _onSearchChanged(String value) {
-    // Instant local filter by name / location
-    ref
-        .read(exploreFilterNotifierProvider.notifier)
-        .setSearchQuery(value);
-
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 800), () {
-      if (value.trim().length >= 3) {
-        ref.read(exploreListingsProvider.notifier).searchArea(value.trim());
-      } else if (value.trim().isEmpty) {
-        // Restore default area when search is cleared
-        ref.read(exploreListingsProvider.notifier).searchArea('UGM Yogyakarta');
-      }
+  void _onAreaSelectedFromMap(String areaName) {
+    setState(() {
+      _isAreaSelectorOpen = false;
     });
+    ref.read(exploreListingsProvider.notifier).searchArea(areaName);
   }
 
-  void _onSearchSubmit(String value) {
-    _debounce?.cancel();
-    if (value.trim().isNotEmpty) {
-      ref.read(exploreListingsProvider.notifier).searchArea(value.trim());
-    }
+  void _onNameSearchChanged(String value) {
+    ref.read(exploreFilterNotifierProvider.notifier).setSearchQuery(value);
   }
 
   @override
@@ -79,13 +65,54 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 500),
+        switchInCurve: Curves.easeInOutCubic,
+        switchOutCurve: Curves.easeInOutCubic,
+        transitionBuilder: (child, animation) {
+          final isMap = child.key == const ValueKey('mapSelector');
+          final slideBegin = isMap
+              ? const Offset(0.0, 0.05)
+              : const Offset(0.0, -0.05);
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: slideBegin,
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+        child: _isAreaSelectorOpen
+            ? InteractiveMapSelector(
+                key: const ValueKey('mapSelector'),
+                onAreaSelected: _onAreaSelectedFromMap,
+                onBack: () => setState(() => _isAreaSelectorOpen = false),
+              )
+            : _buildListingsView(context, filter, listings, exploreState),
+      ),
+    );
+  }
+
+  Widget _buildListingsView(
+    BuildContext context,
+    ExploreFilterState filter,
+    List<KosListing> listings,
+    ExploreListingsState exploreState,
+  ) {
+    return SafeArea(
+      key: const ValueKey('listingsView'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             // ── Header ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -101,13 +128,40 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          exploreState.currentArea,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary.withOpacity(0.8),
-                          ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.location_on_rounded, size: 14, color: AppColors.primary),
+                                  const SizedBox(width: 4),
+                                  const Text(
+                                    'Area: ',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    exploreState.currentArea,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -158,65 +212,73 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
               ),
             const SizedBox(height: 12),
 
-            // ── Search bar ──
+            // ── Name Search bar & Change Area button ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
-                controller: _searchCtrl,
-                onChanged: _onSearchChanged,
-                onSubmitted: _onSearchSubmit,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'Cari lokasi, nama kos, atau area...',
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_searchCtrl.text.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.close, size: 18),
-                          color: AppColors.textSecondary,
-                          tooltip: 'Hapus pencarian',
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            _onSearchChanged('');
-                          },
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _nameSearchCtrl,
+                      onChanged: _onNameSearchChanged,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: 'Cari Nama Kos...',
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        suffixIcon: _nameSearchCtrl.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.close, size: 16),
+                                color: AppColors.textSecondary,
+                                tooltip: 'Hapus pencarian nama',
+                                onPressed: () {
+                                  _nameSearchCtrl.clear();
+                                  _onNameSearchChanged('');
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
                         ),
-                      IconButton(
-                        icon: Icon(
-                          ref.watch(userLocationProvider).valueOrNull != null
-                              ? Icons.location_off
-                              : Icons.my_location,
-                          color: AppColors.primary,
-                          size: 20,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: Colors.transparent),
                         ),
-                        tooltip: 'Toggle Lokasi',
-                        onPressed: () {
-                          ref
-                              .read(userLocationProvider.notifier)
-                              .toggleLocation();
-                        },
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.divider),
+                  const SizedBox(width: 10),
+                  Web3Button(
+                    onPressed: () => setState(() => _isAreaSelectorOpen = true),
+                    color: AppColors.primary,
+                    borderRadius: 24,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.map_rounded, color: Colors.white, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'Area',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                        color: AppColors.primary, width: 1.5),
-                  ),
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 14),
@@ -243,25 +305,14 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
                     case SortMetric.banyakReview:
                       icon = Icons.rate_review_outlined;
                   }
-                  return GestureDetector(
-                    onTap: () => ref
+                  return Web3Button(
+                    onPressed: () => ref
                         .read(exploreFilterNotifierProvider.notifier)
                         .setSortBy(metric),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.textPrimary
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.textPrimary
-                              : AppColors.border,
-                        ),
-                      ),
+                    color: isSelected ? AppColors.primary : Colors.white,
+                    borderRadius: 20,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -275,7 +326,7 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
                             metric.label,
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                               color: isSelected
                                   ? Colors.white
                                   : AppColors.textPrimary,
@@ -395,8 +446,7 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -410,22 +460,16 @@ class _FilterIconButton extends StatelessWidget {
   final bool hasActiveFilters;
   final VoidCallback onTap;
 
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return Web3Button(
+      onPressed: onTap,
+      color: hasActiveFilters
+          ? AppColors.primary.withOpacity(0.1)
+          : Colors.white,
+      borderRadius: 12,
+      child: SizedBox(
         width: 42,
         height: 42,
-        decoration: BoxDecoration(
-          color: hasActiveFilters
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: hasActiveFilters ? AppColors.primary : AppColors.divider,
-          ),
-        ),
         child: Stack(
           alignment: Alignment.center,
           children: [

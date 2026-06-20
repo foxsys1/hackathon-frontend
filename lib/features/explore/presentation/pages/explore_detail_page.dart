@@ -8,6 +8,7 @@ import 'package:kos_gdgoc/features/explore/domain/kos_detail.dart';
 import 'package:kos_gdgoc/features/explore/domain/kos_detail_provider.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/add_review_sheet.dart';
 import 'package:kos_gdgoc/features/explore/presentation/widgets/scam_analysis_dialog.dart';
+import 'package:kos_gdgoc/features/explore/presentation/widgets/detail_mini_map.dart';
 
 class ExploreDetailPage extends ConsumerWidget {
   const ExploreDetailPage({super.key, required this.kosId});
@@ -100,6 +101,16 @@ class ExploreDetailPage extends ConsumerWidget {
                     // ── Description Section ──
                     if (detail.description.isNotEmpty) ...[
                       _DescriptionSection(description: detail.description),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // ── Map Preview Section ──
+                    if (detail.latitude != null && detail.longitude != null) ...[
+                      DetailMiniMap(
+                        latitude: detail.latitude!,
+                        longitude: detail.longitude!,
+                        locationName: detail.area,
+                      ),
                       const SizedBox(height: 20),
                     ],
 
@@ -230,7 +241,7 @@ class ExploreDetailPage extends ConsumerWidget {
                         ),
                         icon: const Icon(Icons.rate_review_outlined),
                         label: const Text(
-                          'Tulis Review (Sertakan Bukti)',
+                          'Tulis Review',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,

@@ -139,44 +139,7 @@ class _ExploreFilterSheetState extends ConsumerState<ExploreFilterSheet> {
                   ]),
                   const SizedBox(height: 24),
 
-                  // ── Lokasi ──
-                  const Text('Lokasi',
-                      style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary)),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ...availableLocations.take(5).map((l) => _locChip(l)),
-                      GestureDetector(
-                        onTap: () async {
-                          final r = await LocationPickerSheet.show(context,
-                              currentSelection: _locations);
-                          if (r != null)
-                            setState(() => _locations
-                              ..clear()
-                              ..addAll(r));
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.primary),
-                          ),
-                          child: const Text('+ Lainnya',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+
 
                   // ── Fasilitas Kamar ──
                   const Text('Fasilitas Kamar',

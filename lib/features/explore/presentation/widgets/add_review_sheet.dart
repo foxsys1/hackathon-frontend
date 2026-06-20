@@ -183,7 +183,7 @@ class _AddReviewSheetState extends ConsumerState<AddReviewSheet> {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
-                    'Tulis Review Anti-Scam',
+                    'Tulis Review',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,

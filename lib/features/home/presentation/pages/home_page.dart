@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kos_gdgoc/core/presentation/widgets/web3_button.dart';
 import 'package:kos_gdgoc/core/theme/app_theme.dart';
 
 class HomePage extends StatelessWidget {
@@ -132,23 +133,26 @@ class _HeroSection extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: onAnalyze,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      icon: const Icon(Icons.qr_code_scanner, size: 20),
-                      label: const Text(
-                        'Analisis Risiko Sekarang',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 15),
+                  Web3Button(
+                    onPressed: onAnalyze,
+                    color: Colors.white,
+                    child: const SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.qr_code_scanner, size: 20, color: AppColors.primary),
+                          SizedBox(width: 8),
+                          Text(
+                            'Analisis Risiko Sekarang',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800, 
+                              fontSize: 16,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -243,10 +247,7 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDecorations.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -256,6 +257,13 @@ class _InfoCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: data.iconBgColor,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: data.iconColor.withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Icon(data.icon, color: data.iconColor, size: 24),
           ),

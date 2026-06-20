@@ -273,11 +273,7 @@ class _ActivitySummaryCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(isNarrow ? 12 : 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
-      ),
+      decoration: AppDecorations.card(radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -516,24 +512,17 @@ class _HistoryRecordCard extends StatelessWidget {
   }
 
   Color _chipBg() {
-    switch (record.riskLevel) {
-      case RiskLevel.rendah:
-        return AppColors.chipGreen;
-      case RiskLevel.sedang:
-        return AppColors.chipYellow;
-      case RiskLevel.tinggi:
-        return AppColors.chipRed;
-    }
+    return Colors.white;
   }
 
   Color _chipText() {
     switch (record.riskLevel) {
       case RiskLevel.rendah:
-        return AppColors.chipGreenText;
+        return const Color(0xFF10B981);
       case RiskLevel.sedang:
-        return AppColors.chipYellowText;
+        return const Color(0xFFF59E0B);
       case RiskLevel.tinggi:
-        return AppColors.chipRedText;
+        return const Color(0xFFEF4444);
     }
   }
 
@@ -568,10 +557,7 @@ class _HistoryRecordCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: EdgeInsets.all(isNarrow ? 10 : 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: AppDecorations.card(radius: 16),
         child: Column(
           children: [
             Row(
@@ -697,6 +683,13 @@ class _HistoryRecordCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _chipBg(),
                         borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _chipText().withValues(alpha: 0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
                         record.riskLabel,

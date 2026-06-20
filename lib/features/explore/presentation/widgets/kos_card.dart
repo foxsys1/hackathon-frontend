@@ -52,11 +52,7 @@ class KosCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
+      decoration: AppDecorations.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -198,11 +194,15 @@ class KosCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F0FF),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.primary.withOpacity(0.12),
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,25 +301,21 @@ class KosCard extends StatelessWidget {
 
 // ── Facility chip colors ──
 
-const _chipColorMap = <String, ({Color bg, Color text, IconData? icon})>{
+const _chipColorMap = <String, ({Color color, IconData? icon})>{
   'Lokasi': (
-    bg: Color(0xFFD1FAE5),
-    text: Color(0xFF065F46),
+    color: Color(0xFF059669),
     icon: Icons.location_on_outlined,
   ),
   'Wifi': (
-    bg: Color(0xFFEDE9FE),
-    text: Color(0xFF5B21B6),
+    color: Color(0xFF7C3AED),
     icon: Icons.wifi,
   ),
   'Keamanan': (
-    bg: Color(0xFFFEF3C7),
-    text: Color(0xFF92400E),
+    color: Color(0xFFD97706),
     icon: Icons.shield_outlined,
   ),
   'Kenyamanan': (
-    bg: Color(0xFFE0F2FE),
-    text: Color(0xFF075985),
+    color: Color(0xFF0284C7),
     icon: Icons.weekend_outlined,
   ),
 };
@@ -339,44 +335,57 @@ class _FacilityChip extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: AppColors.chipGray,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           label,
           style: const TextStyle(
             fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
         ),
       );
     }
 
     final colors = _chipColorMap[label];
-    final bg = colors?.bg ?? AppColors.chipGray;
-    final textColor = colors?.text ?? AppColors.chipGrayText;
+    final color = colors?.color ?? AppColors.textPrimary;
     final icon = colors?.icon;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: bg,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 12, color: textColor),
+            Icon(icon, size: 12, color: color),
             const SizedBox(width: 4),
           ],
           Text(
             label,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: textColor,
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
           ),
         ],

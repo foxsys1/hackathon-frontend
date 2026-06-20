@@ -9,7 +9,7 @@ import 'package:kos_gdgoc/features/explore/domain/kos_listing.dart';
 import 'package:kos_gdgoc/features/explore/data/location_provider.dart';
 import 'package:geolocator/geolocator.dart';
 
-const _defaultArea = 'UGM Yogyakarta';
+const _defaultArea = 'Kota Yogyakarta';
 const _maxFetchCount = 20;
 const _initialRevealCount = 6;
 const _batchRevealCount = 6;

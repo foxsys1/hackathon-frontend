@@ -30,10 +30,36 @@ abstract final class AppColors {
   static const Color chipGray = Color(0xFFF3F4F6);
   static const Color chipGrayText = Color(0xFF374151);
 
-  // Misc
+// Misc
   static const Color divider = Color(0xFFE5E7EB);
   static const Color border = Color(0xFFD1D5DB);
   static const Color iconDefault = Color(0xFF9CA3AF);
+}
+
+abstract final class AppDecorations {
+  static BoxDecoration card({
+    Color color = Colors.white,
+    double radius = 16.0,
+  }) {
+    return BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: 0.08),
+          blurRadius: 32,
+          spreadRadius: 4,
+          offset: const Offset(0, 8),
+        ),
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.03),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
 }
 
 abstract final class AppTheme {

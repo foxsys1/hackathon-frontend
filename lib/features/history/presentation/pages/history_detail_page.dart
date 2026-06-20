@@ -391,10 +391,7 @@ class _KosInfoHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(isNarrow ? 12 : 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: AppDecorations.card(radius: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -518,24 +515,17 @@ class _RiskScoreCard extends StatelessWidget {
   }
 
   Color _chipBg() {
-    switch (record.riskLevel) {
-      case RiskLevel.rendah:
-        return AppColors.chipGreen;
-      case RiskLevel.sedang:
-        return AppColors.chipYellow;
-      case RiskLevel.tinggi:
-        return AppColors.chipRed;
-    }
+    return Colors.white;
   }
 
   Color _chipText() {
     switch (record.riskLevel) {
       case RiskLevel.rendah:
-        return AppColors.chipGreenText;
+        return const Color(0xFF10B981);
       case RiskLevel.sedang:
-        return AppColors.chipYellowText;
+        return const Color(0xFFF59E0B);
       case RiskLevel.tinggi:
-        return AppColors.chipRedText;
+        return const Color(0xFFEF4444);
     }
   }
 
@@ -626,7 +616,14 @@ class _RiskScoreCard extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _chipBg(),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _chipText().withValues(alpha: 0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
