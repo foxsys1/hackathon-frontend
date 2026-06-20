@@ -1288,7 +1288,7 @@ class ReviewCard extends StatelessWidget {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Image.network(
-                      _proxify(url),
+                      kIsWeb ? '$_corsProxy${Uri.encodeComponent(url)}' : url,
                       width: 90,
                       height: 90,
                       fit: BoxFit.cover,
